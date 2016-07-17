@@ -13,11 +13,12 @@ public class DDoSSimulation {
 
 	private JFrame window;
 	private JPanel configurePanel, simulationPanel;
-	private ProcessingSimulation sim;
+	private ProcessingSimulation procGraphic;
+	private String[] pArgs = {"ProcessingSimulation "};
 	
 	public DDoSSimulation() {
 		makeWindow();
-		runSimulation();
+		procGraphic = new ProcessingSimulation();
 	}
 	
 	private void makeWindow() {
@@ -32,9 +33,7 @@ public class DDoSSimulation {
 	}
 	
 	public void runSimulation() {
-		String[] pArgs = {"ProcessingSimulation "};
-	    sim = new ProcessingSimulation();
-	    PApplet.runSketch(pArgs, sim);
+	    PApplet.runSketch(pArgs, procGraphic);
 	}
 	
 	private void generateTabs() {
@@ -46,8 +45,18 @@ public class DDoSSimulation {
 		window.add(tabs);
 	}
 	
+	public ProcessingSimulation getProcessingSimulation() { return procGraphic; }
+	
 	public static void main(String[] args) {
 		DDoSSimulation mainThread = new DDoSSimulation();
+		
+		int nodes = 5;
+		mainThread.getProcessingSimulation().setNumOfSlaves(nodes);
+		mainThread.getProcessingSimulation().makeNetwork();
+		mainThread.runSimulation();
+		
+		//while(true)
+			//mainThread.getProcessingSimulation().draw();
 	}
 
 }

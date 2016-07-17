@@ -11,12 +11,36 @@ public class Network {
 		if (n.getComputer().getType() == Computer.MASTER)
 			masterNode = n;
 		else if (n.getComputer().getType() == Computer.TARGET)
-			masterNode = n;
+			targetNode = n;
 		
 		allNodes.add(n);
 	}
 	
 	public void addEdge(Edge e) {
 		allEdges.add(e);
+	}
+	
+	public Node getMasterNode() { return masterNode; }
+	public Node getTargetNode() { return targetNode; }
+	
+	public Set<Node> getAllNodes() { return allNodes; }
+	public Set<Edge> getAllEdges() { return allEdges; }
+	
+	public Edge getEdge(Node from, Node to) {
+		if (from == null || to == null) return null;
+		
+		for(Edge e: allEdges)
+			if (e.getNodeFrom().equals(from) && e.getNodeTo().equals(to))
+				return e;
+		
+		return null;
+	}
+	
+	public Node getSlaveById(int id) { 
+		for (Node n: allNodes)
+			if (n.getID() == id)
+				return n;
+		
+		return null;
 	}
 }

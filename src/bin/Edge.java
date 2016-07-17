@@ -10,4 +10,7 @@ public class Edge {
 		this.nodeTo = nodeTo;
 		this.network = network;
 	}
+	
+	public Node getNodeFrom() { return nodeFrom; }
+	public Node getNodeTo() { return nodeTo; }
 }

@@ -19,4 +19,6 @@ public class Computer {
 	}
 	
 	public int getType() { return type; }
+	
+	public String getIpAddress() { return ipAddress; }
 }

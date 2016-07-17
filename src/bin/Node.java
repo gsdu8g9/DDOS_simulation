@@ -30,4 +30,8 @@ public class Node {
 	public void setComputer(Computer comp) { computer = comp; }
 	
 	public void addNeighbor(Node n) { neighbors.add(n); }
+	
+	public int getX() { return cordX; }
+	
+	public int getY() { return cordY; }
 }
