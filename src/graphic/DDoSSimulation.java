@@ -22,7 +22,7 @@ public class DDoSSimulation {
 	
 	private void makeWindow() {
 		window = new JFrame("DDoS simulation");
-		window.setExtendedState(JFrame.MAXIMIZED_BOTH); 
+		window.setSize(300, 600); 
 		window.setLayout(new BorderLayout());
 		
 		generateTabs();
