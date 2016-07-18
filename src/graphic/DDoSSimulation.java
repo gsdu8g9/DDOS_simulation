@@ -1,20 +1,19 @@
 package graphic;
 
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-
+import javax.swing.*;
 import processing.core.PApplet;
-
 
 public class DDoSSimulation {
 
 	private JFrame window;
-	private JPanel configurePanel, simulationPanel;
+	private JPanel configurePanel, terminalPanel;
 	private ProcessingSimulation procGraphic;
 	private String[] pArgs = {"ProcessingSimulation "};
+	private int numSlavesConf = 0;
 	
 	public DDoSSimulation() {
 		makeWindow();
@@ -38,25 +37,43 @@ public class DDoSSimulation {
 	
 	private void generateTabs() {
 		JTabbedPane tabs = new JTabbedPane();
-		simulationPanel = new JPanel();
+		terminalPanel = new JPanel();
 		configurePanel = new JPanel();
-		tabs.addTab("Simulation", simulationPanel);
+		
+		// configure tab ------------------------
+		JPanel cSlaves = new JPanel();
+		cSlaves.setBorder(BorderFactory.createTitledBorder("Slaves"));
+		
+		cSlaves.add(new JLabel("Number of slaves:"));
+		JTextField numSlaves = new JTextField(10);
+		cSlaves.add(numSlaves);
+		
+		configurePanel.add(cSlaves);
+		
+		JButton submitConfiguration = new JButton("Configure");
+		configurePanel.add(submitConfiguration);
+		
 		tabs.addTab("Configure", configurePanel);
+		tabs.addTab("Simulation", terminalPanel);
 		window.add(tabs);
+		
+		// action listeners --------------------------------------
+		
+		submitConfiguration.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				numSlavesConf = Integer.parseInt(numSlaves.getText());
+				procGraphic.setNumOfSlaves(numSlavesConf);
+				procGraphic.makeNetwork();
+				
+				runSimulation();
+			}
+		});
 	}
 	
 	public ProcessingSimulation getProcessingSimulation() { return procGraphic; }
 	
 	public static void main(String[] args) {
 		DDoSSimulation mainThread = new DDoSSimulation();
-		
-		int nodes = 5;
-		mainThread.getProcessingSimulation().setNumOfSlaves(nodes);
-		mainThread.getProcessingSimulation().makeNetwork();
-		mainThread.runSimulation();
-		
-		//while(true)
-			//mainThread.getProcessingSimulation().draw();
 	}
 
 }

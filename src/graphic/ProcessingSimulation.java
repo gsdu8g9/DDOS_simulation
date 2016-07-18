@@ -13,7 +13,6 @@ public class ProcessingSimulation extends PApplet{
 	private int appletWidth;
 	private int appletHeight;
 	
-	private int speedPackage = 1;
 	
 	float x;
 	float y;
@@ -77,30 +76,45 @@ public class ProcessingSimulation extends PApplet{
 			}
 		}
 		
+		//testing
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(5));
+		e.startSendingPackage();
+		
 	}
 
 	public void draw() {
 	
-		//draw package : master - slave1
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(3));
-				
-		//x = e.getNodeFrom().getX();
-		//y = e.getNodeFrom().getY();
-		
-		//noStroke();
-		//fill(255,10);
-		//rect(0,0,width,height);
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(5));
 			
-		//x = x + xspeed;
-		//y = y + yspeed;
-			
-		//stroke(0);
-		//fill(175);
-			
-		//ellipse(x, y, 16, 16);
-		
+		//e.startSendingPackage();
+		drawPackage(e);
 		
 	  }
+	
+	private void drawPackage(Edge e) {
+		if (e.packageNotReachedEnd()) {
+			float x = e.getPackageCordX();
+			float y = e.getPackageCordY();
+			
+			float speedX = (float)(e.getNodeFrom().getX() - e.getNodeTo().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY());
+			float speedY = 1;
+			
+			noStroke();
+			fill(255,10);
+			rect(0,0,16,16);
+			
+			x = x - speedX;
+			y = y + speedY;
+			
+			e.updatePackageCordX(x);
+			e.updatePackageCordY(y);
+			
+			stroke(0);
+			fill(175);
+			
+			ellipse(x, y, 16, 16);
+		} 
+	}
 	
 	public void setNumOfSlaves(int num) { numOfSlaves = num; } 
 	
