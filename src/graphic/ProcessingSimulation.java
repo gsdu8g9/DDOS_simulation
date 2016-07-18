@@ -66,8 +66,7 @@ public class ProcessingSimulation extends PApplet{
 				fill(175);
 				ellipse(n.getX(), n.getY(), 10, 10);
 					
-				PImage img;
-				img = loadImage("photo.png");
+				PImage img = loadImage("photo.png");
 				image(img, n.getX(), n.getY(), 25, 25);
 					
 				textFont(font);
@@ -76,17 +75,15 @@ public class ProcessingSimulation extends PApplet{
 			}
 		}
 		
-		//testing
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(5));
-		e.startSendingPackage();
-		
 	}
 
 	public void draw() {
 	
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(5));
-			
-		//e.startSendingPackage();
+		background(255);
+		drawNetworkBegging();
+		
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(6));
+		
 		drawPackage(e);
 		
 	  }
@@ -96,14 +93,19 @@ public class ProcessingSimulation extends PApplet{
 			float x = e.getPackageCordX();
 			float y = e.getPackageCordY();
 			
-			float speedX = (float)(e.getNodeFrom().getX() - e.getNodeTo().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY());
-			float speedY = 1;
+			float speedUp = 2;
+			float speedX = 0;
+			float speedY = 1*speedUp;
 			
-			noStroke();
-			fill(255,10);
-			rect(0,0,16,16);
+			if (e.getNodeFrom().getX() > e.getNodeTo().getX()) {
+				speedX = (float)(e.getNodeFrom().getX() - e.getNodeTo().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY()*speedUp);
+				x = x - speedX*speedUp*(float)0.8;
+			}
+			else if (e.getNodeFrom().getX() < e.getNodeTo().getX()) {
+				speedX = (float)(e.getNodeTo().getX() - e.getNodeFrom().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY()*speedUp);
+				x = x + speedX*speedUp*(float)0.8;
+			}
 			
-			x = x - speedX;
 			y = y + speedY;
 			
 			e.updatePackageCordX(x);
@@ -112,7 +114,8 @@ public class ProcessingSimulation extends PApplet{
 			stroke(0);
 			fill(175);
 			
-			ellipse(x, y, 16, 16);
+			PImage img = loadImage("packageIcon2.png");
+			image(img, x-12, y, 25, 25);
 		} 
 	}
 	
@@ -151,6 +154,9 @@ public class ProcessingSimulation extends PApplet{
 			
 			network.addNode(nodeSlave);
 		}
+		
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(6));
+		e.startSendingPackage();
 		
 		//wait = false; // can draw now
 		
