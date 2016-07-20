@@ -6,18 +6,19 @@ import java.util.*;
 
 public class ProcessingSimulation extends PApplet{
 	
+	private static final int PIXEL_RANGE_NODE = 25;
+	
 	private int numOfSlaves;
 	private boolean wait = true;
 	private Network network;
+	private DDoSSimulation GUIcontrol;
 	
 	private int appletWidth;
 	private int appletHeight;
 	
-	
-	float x;
-	float y;
-	float xspeed = 1;
-	float yspeed = (float)10;
+	public ProcessingSimulation(DDoSSimulation DDosGui) {
+		this.GUIcontrol = DDosGui;
+	}
 	
 	public void settings() {
 		size(800,600);
@@ -67,7 +68,7 @@ public class ProcessingSimulation extends PApplet{
 				ellipse(n.getX(), n.getY(), 10, 10);
 					
 				PImage img = loadImage("photo.png");
-				image(img, n.getX(), n.getY(), 25, 25);
+				image(img, n.getX(), n.getY(), PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 					
 				textFont(font);
 				fill(0);
@@ -78,13 +79,14 @@ public class ProcessingSimulation extends PApplet{
 	}
 
 	public void draw() {
-	
 		background(255);
 		drawNetworkBegging();
 		
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(6));
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(3));
 		
 		drawPackage(e);
+		
+		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 		
 	  }
 	
@@ -115,7 +117,7 @@ public class ProcessingSimulation extends PApplet{
 			fill(175);
 			
 			PImage img = loadImage("packageIcon2.png");
-			image(img, x-12, y, 25, 25);
+			image(img, x-12, y, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 		} 
 	}
 	
@@ -155,11 +157,24 @@ public class ProcessingSimulation extends PApplet{
 			network.addNode(nodeSlave);
 		}
 		
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(6));
+		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(3));
 		e.startSendingPackage();
 		
 		//wait = false; // can draw now
 		
 	}
-	
+
+	public void checkClickedComputer(int cordmouseX, int cordmouseY) {
+		GUIcontrol.detailPanelVisible(false);
+		
+		//check all nodes, and for any node if mouse cords are in PIXEL_RANGE_NODE 
+		Set<Node> allNodes = network.getAllNodes();
+		for(Node node: allNodes) {
+			if ((cordmouseX >= node.getX()) && (cordmouseX <= (node.getX() + PIXEL_RANGE_NODE))) {
+				//clicked on computer -> show details
+				GUIcontrol.showComputerDetails(node.getComputer(), node.getID());
+				GUIcontrol.detailPanelVisible(true);
+			}
+		}
+	}
 }
