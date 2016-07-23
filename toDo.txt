@@ -1,0 +1,46 @@
+NAJPRIORITETNIJE:
+- za iscrtavanje seme - odradi za poslednju vrstu sa %numOfSlaves, ne /numOfSlaves
+
+1. za sve JTextFields proveriti da li su ispravno uneti podaci
+2. fileInput & userInput za unos IPAddresses
+
+3. za crtanje paketa razmotriti kako da se uradi da svaka nit crta jedan paket (i kapiram da se negde u nekom Setu
+   pamte sve niti koje su kreirane, radi nekih kasnijih provera pristiglih paketa...)
+
+4. ako postoji jedna globalna funkcija sa dve for petlje, grafika se mnogo uspori - ispitati ovo kada uvedemo niti
+   (za sada ostaje za svaku konfiguraciju po 1 funkcija, da bi bilo brze kada pokazemo Zarku na konsultacijama)
+   (sacuvala sam ovde globalnu funkciju)
+   private void makeNetworkIn_n_lines(Node masterNode, Node targetNode, int lines) {
+		// calculate padding between nodes
+		int padding = (APPLET_WIDTH - PIXEL_START_LEFT*2) / (numOfSlaves/lines);
+		int calculatedHeight = APPLET_HEIGHT/2;
+		
+		for (int j=0; j<lines; j++)
+		for (int i=0; i<numOfSlaves; i++) {
+			if (lines == 1) calculatedHeight =  PIXEL_START_TOP + MATRIX_RANGE_1;
+			else if (lines == 2) calculatedHeight = PIXEL_START_TOP + MATRIX_RANGE_2*(j+1);
+			else if (lines == 3) calculatedHeight =  PIXEL_START_TOP + MATRIX_RANGE_3*(j+1);
+			else if (lines == 4) calculatedHeight =  PIXEL_START_TOP + MATRIX_RANGE_4*(j+1);
+			else if (lines == 5) calculatedHeight =  PIXEL_START_TOP + MATRIX_RANGE_5*(j+1);
+			else if (lines == 6) calculatedHeight = PIXEL_START_TOP + MATRIX_RANGE_6*(j+1);
+			
+			Node nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), calculatedHeight);
+			
+			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
+			nodeSlave.setComputer(newSlave);
+			
+			//add edges: master-slave, slave-target
+			Edge edge1 = new Edge(network, masterNode, nodeSlave);
+			Edge edge2 = new Edge(network, nodeSlave, targetNode);
+			
+			network.addEdge(edge1);
+			network.addEdge(edge2);
+			
+			masterNode.addNeighbor(nodeSlave);
+			nodeSlave.addNeighbor(masterNode);
+			nodeSlave.addNeighbor(targetNode);
+			targetNode.addNeighbor(nodeSlave);
+			
+			network.addNode(nodeSlave);
+		}
+	}

@@ -5,6 +5,10 @@ import java.awt.Font;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.ArrayList;
+
 import javax.swing.*;
 import bin.*;
 import javafx.scene.layout.Border;
@@ -12,23 +16,29 @@ import processing.core.*;
 
 public class DDoSSimulation {
 
-	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 300,
+	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
 							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 300;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
-				 descriptionFont = new Font("Cambria", Font.ITALIC, 15);			
+				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
+				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
 	private JPanel configurePanel, terminalPanel, detailsPanel, startingPanel, ipMainPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF; 
+	private boolean userInput = false, defaultInput = false, fileInput = false;
 	
 	private ProcessingSimulation procGraphic;
 	private String[] pArgs = {"ProcessingSimulation "};
 	private int numSlavesConf = 0, ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	public DDoSSimulation() {
-		makePopUpStart();
+		//makePopUpStart();
+		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
+		procGraphic.setNumOfSlaves(50);
+		procGraphic.makeNetworkDefault();
+		runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -77,13 +87,13 @@ public class DDoSSimulation {
 		JPanel numberSlaves = new JPanel();
 		numberSlaves.setBorder(BorderFactory.createTitledBorder("Number of slaves"));
 		ButtonGroup slavesG = new ButtonGroup();
-		JRadioButton under200 = new JRadioButton("under 200");
-		JRadioButton above200 = new JRadioButton("above 200");
-		under200.setSelected(true);
-		slavesG.add(under200);				
-		slavesG.add(above200);			
-		numberSlaves.add(under200);				
-		numberSlaves.add(above200);			
+		JRadioButton under60 = new JRadioButton("REAL SIM- under 60");
+		JRadioButton above60 = new JRadioButton("GRAPH SIM - above 60");
+		under60.setSelected(true);
+		slavesG.add(under60);				
+		slavesG.add(above60);			
+		numberSlaves.add(under60);				
+		numberSlaves.add(above60);			
 		startingPanel.add(numberSlaves);
 		
 		JButton confirm = new JButton("START");
@@ -100,15 +110,15 @@ public class DDoSSimulation {
 				boolean r_internal = internalResources.isSelected();
 				boolean y_direct = direct.isSelected();
 				boolean p_cyn = cyn.isSelected();
-				boolean n_slaves = under200.isSelected();
+				boolean n_slaves = under60.isSelected();
 				
 				makeWindow(r_internal, y_direct, p_cyn, n_slaves);
 			}
 		});
 	}
 	
-	private void makeWindow(boolean internalResouces, boolean typeDirect, boolean packageCYN, boolean under200) {
-		popUpStart.setVisible(false);
+	private void makeWindow(boolean internalResouces, boolean typeDirect, boolean packageCYN, boolean under60) {
+		//popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -183,10 +193,30 @@ public class DDoSSimulation {
 		detailsPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		
 		// terminal tab --------------------------------------------------------------------------------
-		JTextArea terminal = new JTextArea(290,590);
+		
+		JTextArea terminal = new JTextArea(44,67);
 		terminal.setBackground(Color.BLACK);
 		terminal.setForeground(Color.WHITE);
-		terminal.append("Hello human");
+		terminal.setFont(terminalFont);
+		terminal.append(">");
+		
+		terminal.addKeyListener(new KeyListener(){
+		    @Override
+		    public void keyPressed(KeyEvent e){
+		        if(e.getKeyCode() == KeyEvent.VK_ENTER){
+		        	e.consume();
+		        	//process this command
+		        	terminal.append("\n>Enter pressed...");
+		        }
+		    }
+
+		    @Override
+		    public void keyTyped(KeyEvent e) { return; }
+		    
+		    @Override
+		    public void keyReleased(KeyEvent e) { return; }
+
+		});
 		
 		terminalPanel.add(terminal);
 		
@@ -218,7 +248,7 @@ public class DDoSSimulation {
 	
 	public void makeIPAddressConfigWindow(int numSlaves) {
 		ipAddressConfig = new JFrame();
-		ipAddressConfig.setSize(WINDOW_WIDTH, WINDOW_HEIGHT/2);
+		ipAddressConfig.setSize(WINDOW_WIDTH, WINDOW_HEIGHT/4);
 		ipMainPanel = new JPanel(new BorderLayout());
 		
 		JPanel topChoicePanel = new JPanel();
@@ -231,11 +261,6 @@ public class DDoSSimulation {
 		ipMainPanel.add(topChoicePanel, BorderLayout.NORTH);
 		
 		JPanel filePanel = new JPanel();
-		filePanel.setBorder(BorderFactory.createTitledBorder("Choose file with IP Addresses"));
-		JLabel pathL = new JLabel("Path: ");
-		JTextField pathTF = new JTextField(30);
-		filePanel.add(pathL);
-		filePanel.add(pathTF);
 					
 		JButton buttonSubmit = new JButton("Submit");
 		ipMainPanel.add(buttonSubmit, BorderLayout.SOUTH);
@@ -245,16 +270,69 @@ public class DDoSSimulation {
 		
 		ipAddressConfig.add(ipMainPanel);
 		ipAddressConfig.setVisible(true);
-		ipAddressConfig.setResizable(false);
+		ipAddressConfig.setResizable(true);
 		
 		r_file.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				r_default.setEnabled(false);
 				r_user.setEnabled(false);
 				
+				filePanel.setBorder(BorderFactory.createTitledBorder("Choose file with IP Addresses"));
+				JLabel pathL = new JLabel("Path: ");
+				JTextField pathTF = new JTextField(30);
+				filePanel.add(pathL);
+				filePanel.add(pathTF);
+				
+				fileInput = true;
 				filePanel.setVisible(true);
 			}
 		});
+		
+		//this must be global in this class, so method configureNetworkFromUserInput() can access this
+		ArrayList<JTextField> ipInputs = new ArrayList<JTextField>();
+		
+		// case when same button is pushed multiple times ? - lock this button too?
+		r_user.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				r_default.setEnabled(false);
+				r_file.setEnabled(false);
+				
+				filePanel.setBorder(BorderFactory.createTitledBorder("Type in ip addresses"));
+				filePanel.setLayout(new GridLayout(numSlavesConf/2,2,5,5));
+				for (int i=0; i < numSlavesConf; i++) {
+					JTextField ipInput = new JTextField(20);
+					ipInputs.add(ipInput);
+					filePanel.add(ipInput);
+				}
+				
+				userInput = true;
+				filePanel.setVisible(true);
+			}
+		});
+		
+		r_default.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				r_user.setEnabled(false);
+				r_file.setEnabled(false);
+				defaultInput = true;
+			}
+		});
+		
+		buttonSubmit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (userInput) return; 		//configureNetworkFromUserInput();
+				else if (fileInput) return; //configureNetworkFromFileInput();
+				else if (defaultInput) configureNetworkByDefault();
+				
+				ipAddressConfig.setVisible(false);
+			}
+		});
+	}
+	
+	private void configureNetworkByDefault() {  
+		procGraphic.setNumOfSlaves(numSlavesConf);
+		procGraphic.makeNetworkDefault();
+		runSimulation();
 	}
 	
 	public ProcessingSimulation getProcessingSimulation() { return procGraphic; }

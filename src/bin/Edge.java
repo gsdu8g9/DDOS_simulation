@@ -32,7 +32,7 @@ public class Edge {
 	}
 	
 	public boolean packageNotReachedEnd() {
-		if (cordPackageX == nodeTo.getX() || cordPackageY == nodeTo.getY())
+		if (Math.ceil(cordPackageX) == nodeTo.getX() || Math.ceil(cordPackageY) == nodeTo.getY())
 			return false;
 		else return true;
 	}

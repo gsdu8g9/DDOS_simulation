@@ -1,0 +1,12 @@
+Sta bi mogao sve da podrzi projekat:
+1)CYN flooding
+
+
+10) ping komanda -> ping www.domain.com
+    - nadje u konfigurisanoj mrezi taj domen i ako postoji salje sa naseg racunara 4 paketa
+    - ispit ip adrese
+    - bukvalno iskopirati ping komandu iz terminala (sa svim onim -n pamaretrila ako hocemo vise paketa, vece velicine)
+
+Na kraju svega:
+- Ako ostane vremena mogao bi da se uradi mali 'User Help' u kojem ce ukratko za svaki feature da opise po malo kako
+  funkcionise to generalno. (nabijamo kao dokumentaciju, ako se to bude koristilo u labovima)
