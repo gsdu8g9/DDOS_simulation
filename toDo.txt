@@ -1,6 +1,9 @@
 NAJPRIORITETNIJE:
 - za iscrtavanje seme - odradi za poslednju vrstu sa %numOfSlaves, ne /numOfSlaves
 
+- odraditi da se mere vremena kada se pokrene simulacija i dok se ne napuni taget -> koliko traje
+
+
 1. za sve JTextFields proveriti da li su ispravno uneti podaci
 2. fileInput & userInput za unos IPAddresses
 

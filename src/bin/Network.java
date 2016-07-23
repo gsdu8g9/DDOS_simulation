@@ -43,4 +43,14 @@ public class Network {
 		
 		return null;
 	}
+
+	public void infectSlaves() {
+		//making all email virus packages and preparing them to be drawn
+		for(Edge e: allEdges) {
+			if (e.getNodeFrom().equals(getMasterNode())) {
+				Package pack = new Package(e, 32, Package.EMAIL_VIRUS);
+				e.startSendingPackage(pack);
+			}
+		}
+	}
 }

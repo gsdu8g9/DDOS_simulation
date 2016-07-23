@@ -28,7 +28,7 @@ public class DDoSSimulation {
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	
-	private ProcessingSimulation procGraphic;
+	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
 	private int numSlavesConf = 0, ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
@@ -36,7 +36,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(50);
+		procGraphic.setNumOfSlaves(10);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -205,8 +205,18 @@ public class DDoSSimulation {
 		    public void keyPressed(KeyEvent e){
 		        if(e.getKeyCode() == KeyEvent.VK_ENTER){
 		        	e.consume();
-		        	//process this command
-		        	terminal.append("\n>Enter pressed...");
+		        	
+		        	String command = terminal.getText();
+		        	command = command.substring(1);
+		        	
+		        	if (command.equals("start infecting")) {
+		        		if (procGraphic == null) {
+		        			terminal.append("\n>Configure network first... \n>");
+		        		} else 
+		        			procGraphic.infectSlaves();
+		        		terminal.append("\n>Infecting done... \n>");
+		        	} 
+		        	
 		        }
 		    }
 

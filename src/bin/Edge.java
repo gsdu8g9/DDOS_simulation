@@ -1,39 +1,33 @@
 package bin;
 
+import java.util.*;
+
 public class Edge {
 	private Node nodeFrom;
 	private Node nodeTo;
 	private Network network;
-	private float cordPackageX, cordPackageY;
-	private boolean sendingPackage = false;
+	private Set<Package> packages;
+	private Package virusPackage = null;
 	
 	public Edge(Network network, Node nodeFrom, Node nodeTo) {
 		this.nodeFrom = nodeFrom;
 		this.nodeTo = nodeTo;
 		this.network = network;
-		
-		cordPackageX = 0;
-		cordPackageY = 0;
+		packages = new HashSet<Package>();
 	}
 	
 	public Node getNodeFrom() { return nodeFrom; }
 	public Node getNodeTo() { return nodeTo; }
 	
-	public void updatePackageCordX(float x) { cordPackageX = x;}
-	public void updatePackageCordY(float y) { cordPackageY = y;}
-	
-	public float getPackageCordX() { return cordPackageX; }
-	public float getPackageCordY() { return cordPackageY; }
-	
-	public void startSendingPackage() {
-		sendingPackage = true;
-		cordPackageX = nodeFrom.getX();
-		cordPackageY = nodeFrom.getY();
+	public void startSendingPackage(Package pack) {
+		pack.setX(nodeFrom.getX());
+		pack.setY(nodeFrom.getY());
+		packages.add(pack);
+		if (pack.getType() == Package.EMAIL_VIRUS) virusPackage = pack;
 	}
 	
-	public boolean packageNotReachedEnd() {
-		if (Math.ceil(cordPackageX) == nodeTo.getX() || Math.ceil(cordPackageY) == nodeTo.getY())
-			return false;
-		else return true;
-	}
+	public Set<Package> getPackages() { return packages; }
+	public Package getVirusPackage() { return virusPackage; }
+	
+	public void deleteVirusPackage() { virusPackage = null; }
 }

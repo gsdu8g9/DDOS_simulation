@@ -1,19 +1,24 @@
 package graphic;
 
 import bin.*;
+import bin.Package;
 import processing.core.*;
 import java.util.*;
 
 public class ProcessingSimulation extends PApplet{
 	
-	private static final int PIXEL_RANGE_NODE = 25, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, MATRIX_RANGE_PIXEL = 100, PIXEL_START_LEFT = 100,
+	private static final int PIXEL_RANGE_NODE = 60, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, MATRIX_RANGE_PIXEL = 100, PIXEL_START_LEFT = 100,
 							 MATRIX_RANGE_6 = 75, MATRIX_RANGE_5 = 100, MATRIX_RANGE_4 = 125, MATRIX_RANGE_3 = 150, MATRIX_RANGE_2 = 175, MATRIX_RANGE_1 = 200,
 							 NODES_PER_LINE = 10, PIXEL_START_TOP = 50;
 	
+	private static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2;
 	private int numOfSlaves;
 	private Network network;
 	private DDoSSimulation GUIcontrol;
+	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
 	PImage networkBackground;
+	boolean imageChaged = false;
+	boolean imageLoaded = false;
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
@@ -29,9 +34,13 @@ public class ProcessingSimulation extends PApplet{
 	  drawNetworkBegging();
 	}
 	
-	private void drawNetworkBegging() {
-		
-		//draw master and target	
+	public void infectSlaves() { 
+		stage = ProcessingSimulation.STAGE_INFECTING_VIRUS;
+		network.infectSlaves(); 
+		draw(); 
+	}
+	
+	private void drawNetworkBegging() {	
 		stroke(0);
 		fill(175);
 		ellipse(network.getMasterNode().getX(), network.getMasterNode().getY(), 16, 16);
@@ -66,59 +75,108 @@ public class ProcessingSimulation extends PApplet{
 				fill(175);
 				ellipse(n.getX(), n.getY(), 10, 10);
 					
-				PImage img = loadImage("photo.png");
-				image(img, n.getX(), n.getY(), PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+				PImage img = loadImage("server.png");
+				image(img, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 					
 				textFont(font);
 				fill(0);
-				text(n.getID(), n.getX()+7, n.getY()-2);
+				text(n.getID(), n.getX()-15, n.getY()-5);
 			}
 		}
 		
 		saveFrame("data/initalNetwork.png");
 		networkBackground = loadImage("initalNetwork.png");
+		imageLoaded = true;
 	}
 
+	private void update() {
+		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
+			//check if all nodes received packages and then change servers -> infected slaves
+			Set<Edge> allEdges = network.getAllEdges();
+			int infected = 0;
+			
+			for (Edge e: allEdges) {
+				Package virus = e.getVirusPackage();
+				if (virus != null && virus.packageReceived() == true) {
+					PImage img = loadImage("computer-alert.png");
+					Node n = e.getNodeTo();
+					image(img, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+					infected++;
+				}
+			}
+			
+			//wait for all slaves to be infected by virus
+			if (infected == numOfSlaves) {
+				for (Edge e: allEdges) {
+					Package virus = e.getVirusPackage();
+					if (virus != null && virus.packageReceived() == true) e.deleteVirusPackage();
+				}
+				saveFrame("data/initalNetwork.png");
+				imageChaged = true;
+			}
+			
+		} else if (stage == ProcessingSimulation.STAGE_INIT_NETWORK)
+			drawNetworkBegging();
+		
+	}
+	
 	public void draw() {
-		image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
+		update();
 		
-		
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(7));
-		
-		drawPackage(e);
+		if (imageChaged == true) {
+			networkBackground = loadImage("initalNetwork.png");
+			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
+			//imageChaged = false;
+		}
+			
+		if (imageLoaded == true)
+			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
 		
 		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 		
+		Set<Edge> allEdges = network.getAllEdges();
+		for (Edge e: allEdges) {
+			Set<Package> allPackages = e.getPackages();
+			for (Package pack: allPackages)	
+				drawPackage(pack);
+		}
 	  }
 	
-	private void drawPackage(Edge e) {
-		if (e.packageNotReachedEnd()) {
-			float x = e.getPackageCordX();
-			float y = e.getPackageCordY();
+	private void drawPackage(Package pack) {
+		if (!(pack.packageReceived())) {
+			float x = pack.getX();
+			float y = pack.getY();
 			
 			float speedUp = 1;
 			float speedX = 0;
 			float speedY = 1*speedUp;
 			
-			if (e.getNodeFrom().getX() > e.getNodeTo().getX()) {
-				speedX = (float)(e.getNodeFrom().getX() - e.getNodeTo().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY()*speedUp);
+			if (pack.getEdge().getNodeFrom().getX() > pack.getEdge().getNodeTo().getX()) {
+				speedX = (float)(pack.getEdge().getNodeFrom().getX() - pack.getEdge().getNodeTo().getX()) / 
+						 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY()*speedUp);
 				x = x - speedX*speedUp;
 			}
-			else if (e.getNodeFrom().getX() < e.getNodeTo().getX()) {
-				speedX = (float)(e.getNodeTo().getX() - e.getNodeFrom().getX()) / (float)(e.getNodeTo().getY() - e.getNodeFrom().getY()*speedUp);
+			else if (pack.getEdge().getNodeFrom().getX() < pack.getEdge().getNodeTo().getX()) {
+				speedX = (float)(pack.getEdge().getNodeTo().getX() - pack.getEdge().getNodeFrom().getX()) / 
+						 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY()*speedUp);
 				x = x + speedX*speedUp;
 			}
 			
 			y = y + speedY;
 			
-			e.updatePackageCordX(x);
-			e.updatePackageCordY(y);
+			pack.setX(x);
+			pack.setY(y);
 			
 			stroke(0);
 			fill(175);
 			
-			PImage img = loadImage("packageIcon2.png");
-			image(img, x-12, y, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+			PImage img;
+			if (pack.getType() == Package.EMAIL_VIRUS)  
+				img = loadImage("email2.png");
+			else
+				img = loadImage("packageIcon2.png");
+			
+			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
 		} 
 	}
 	
@@ -296,10 +354,6 @@ public class ProcessingSimulation extends PApplet{
 		else if (numOfSlaves <= 30 && numOfSlaves > 20) makeNetworkIn_3_lines(masterNode, targetNode);
 		else if (numOfSlaves <= 20 && numOfSlaves > 10) makeNetworkIn_2_lines(masterNode, targetNode);
 		else if (numOfSlaves <= 10) makeNetworkIn_1_lines(masterNode, targetNode);
-		
-		// testing
-		Edge e = network.getEdge(network.getMasterNode(), network.getSlaveById(7));
-		e.startSendingPackage();
 		
 	}
 
