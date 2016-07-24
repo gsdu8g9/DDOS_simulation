@@ -2,6 +2,8 @@ package bin;
 
 import java.util.*;
 
+import javax.swing.JTextArea;
+
 public class Edge {
 	private Node nodeFrom;
 	private Node nodeTo;
@@ -30,4 +32,9 @@ public class Edge {
 	public Package getVirusPackage() { return virusPackage; }
 	
 	public void deleteVirusPackage() { virusPackage = null; }
+	
+	public void writeSendingStart(Package pack, JTextArea terminal) {
+		terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+	} 
 }

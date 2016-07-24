@@ -27,6 +27,7 @@ public class DDoSSimulation {
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
+	private JTextArea terminal;
 	
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
@@ -36,7 +37,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(10);
+		procGraphic.setNumOfSlaves(26);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -129,6 +130,7 @@ public class DDoSSimulation {
 	
 	public void runSimulation() {
 	    PApplet.runSketch(pArgs, procGraphic);
+	    procGraphic.saveInitialNetwork();
 	}
 	
 	private void generateTabs() {
@@ -194,7 +196,7 @@ public class DDoSSimulation {
 		
 		// terminal tab --------------------------------------------------------------------------------
 		
-		JTextArea terminal = new JTextArea(44,67);
+		terminal = new JTextArea(44,67);
 		terminal.setBackground(Color.BLACK);
 		terminal.setForeground(Color.WHITE);
 		terminal.setFont(terminalFont);
@@ -214,9 +216,7 @@ public class DDoSSimulation {
 		        			terminal.append("\n>Configure network first... \n>");
 		        		} else 
 		        			procGraphic.infectSlaves();
-		        		terminal.append("\n>Infecting done... \n>");
 		        	} 
-		        	
 		        }
 		    }
 
@@ -357,6 +357,10 @@ public class DDoSSimulation {
 	}
 	
 	public void detailPanelVisible(boolean value) { detailsPanel.setVisible(value);}
+	
+	public JTextArea getTerminal() {
+		return terminal;
+	}
 	
 	public static void main(String[] args) {
 		DDoSSimulation mainThread = new DDoSSimulation();

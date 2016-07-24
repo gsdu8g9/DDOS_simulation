@@ -31,7 +31,12 @@ public class Package {
 	public Edge getEdge() { return edge; }
 	
 	public boolean packageReceived() {
-		if (Math.ceil(cordX) == edge.getNodeTo().getX() || Math.ceil(cordY) == edge.getNodeTo().getY())
+		int endX = edge.getNodeTo().getX();
+		int endY = edge.getNodeTo().getY();
+		
+		if (Math.ceil(cordX) == endX || Math.ceil(cordY) == endY)
+			return true;
+		if ((cordX < (endX+5) && cordX > (endX-5)) && (cordY < (endY+5) && cordX > (endX-5)))
 			return true;
 		else return false;
 	}

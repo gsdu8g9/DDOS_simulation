@@ -9,6 +9,7 @@ public class Node {
 	private int id;
 	private Set<Node> neighbors = new HashSet<Node> ();
 	private Computer computer;
+	private boolean infected = false;
 	
 	public Node(Computer comp, int x, int y){
 		computer = comp;
@@ -22,6 +23,9 @@ public class Node {
 		cordX = x;
 		cordY = y;
 	}
+	
+	public void setInfected(boolean inf) { infected = inf; }
+	public boolean getInfected() { return infected; }
 	
 	public Computer getComputer() { return computer; }
 	

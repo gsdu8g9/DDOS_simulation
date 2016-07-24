@@ -2,10 +2,17 @@ package bin;
 
 import java.util.*;
 
+import graphic.ProcessingSimulation;
+
 public class Network {
+	private ProcessingSimulation procSim;
 	private Set<Node> allNodes = new HashSet<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
 	private Node masterNode = null, targetNode = null;
+	
+	public Network(ProcessingSimulation procSim) {
+		this.procSim = procSim;
+	}
 	
 	public void addNode(Node n) {
 		if (n.getComputer().getType() == Computer.MASTER)
@@ -50,6 +57,7 @@ public class Network {
 			if (e.getNodeFrom().equals(getMasterNode())) {
 				Package pack = new Package(e, 32, Package.EMAIL_VIRUS);
 				e.startSendingPackage(pack);
+				e.writeSendingStart(pack, procSim.getTerminal());
 			}
 		}
 	}
