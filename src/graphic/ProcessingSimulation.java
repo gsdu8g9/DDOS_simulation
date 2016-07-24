@@ -3,6 +3,8 @@ package graphic;
 import bin.*;
 import bin.Package;
 import processing.core.*;
+
+import java.awt.Color;
 import java.util.*;
 
 import javax.swing.JTextArea;
@@ -13,16 +15,16 @@ public class ProcessingSimulation extends PApplet{
 							 MATRIX_RANGE_6 = 75, MATRIX_RANGE_5 = 100, MATRIX_RANGE_4 = 125, MATRIX_RANGE_3 = 150, MATRIX_RANGE_2 = 175, MATRIX_RANGE_1 = 200,
 							 NODES_PER_LINE = 10, PIXEL_START_TOP = 50;
 	
-	private static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3;
-	private int numOfSlaves;
+	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4;
+	private int numOfSlaves, ddosType, infected = 0, currentNumPackages = 0;
+	private long lastPackageWave = 0;
 	private Network network;
 	private DDoSSimulation GUIcontrol;
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
 	private PImage networkBackground;
-	private boolean newImageToLoad = false;
-	private boolean firstImageLoad = false;
-	private int infected = 0;
-	
+	private boolean newImageToLoad = false, firstImageLoad = false;
+	private float angleTargetMemory = 0;
+
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
 	}
@@ -40,6 +42,7 @@ public class ProcessingSimulation extends PApplet{
 	public void infectSlaves() { 
 		stage = ProcessingSimulation.STAGE_INFECTING_VIRUS;
 		network.infectSlaves();
+		GUIcontrol.updateLastInputTerminal();
 	}
 	
 	private void drawNetworkBegging() {	
@@ -99,6 +102,9 @@ public class ProcessingSimulation extends PApplet{
 	}
 
 	private void update() {
+		currentNumPackages = network.getNumPackages();
+		angleTargetMemory = (network.getTagetLeftPercent())*360;
+		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
 			//check if all nodes received packages and then change servers -> infected slaves
 			Set<Edge> allEdges = network.getAllEdges();
@@ -126,10 +132,26 @@ public class ProcessingSimulation extends PApplet{
 				saveFrame("data/initalNetwork.png");
 				JTextArea terminal = getTerminal();
 				terminal.append("\n>Infecting done... \n>");
+				GUIcontrol.updateLastInputTerminal();
+				
 				stage = ProcessingSimulation.STAGE_IDLE;
 			}
-		
+		} else if (stage == ProcessingSimulation.STAGE_ATTACKING) {
+			generateCYNpackages(ddosType);
 		}
+	}
+	
+	private void generateCYNpackages(int packageType) {
+		long currSec = System.currentTimeMillis()/1000;
+		
+		if (lastPackageWave == 0) {
+			lastPackageWave = currSec;
+			network.sendFromAllSlaves(packageType);
+		} else 
+			if ((currSec - lastPackageWave) >= 5) {  
+				lastPackageWave = currSec;
+				network.sendFromAllSlaves(packageType);
+			}
 	}
 	
 	public void draw() {
@@ -152,7 +174,26 @@ public class ProcessingSimulation extends PApplet{
 		
 		drawAllPackages();
 		
-	  }
+		Color color = null;
+		if ((angleTargetMemory/36)*10 < 30) color = Color.GREEN;
+		else if ((angleTargetMemory/36)*10 > 30 && (angleTargetMemory/36)*10 < 60) color = Color.ORANGE;
+		else color = Color.RED;
+		
+		if (angleTargetMemory > 0) {
+			noStroke();
+			fill(color.getRGB(), 51);
+			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 200, 200, 0, radians(angleTargetMemory));
+			
+			noStroke();
+			fill(255);
+			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 100, 100, 0, radians(360));
+			
+			PFont font = loadFont("coder-15.vlw");
+			textFont(font);
+			fill(0);
+			text((angleTargetMemory/36)*10+"%", APPLET_WIDTH - 230, APPLET_HEIGHT - 150);
+		}
+	}
 	
 	private void drawAllPackages() {
 		Set<Edge> allEdges = network.getAllEdges();
@@ -169,6 +210,9 @@ public class ProcessingSimulation extends PApplet{
 			float y = pack.getY();
 			
 			float speedUp = 3;
+			
+			if (currentNumPackages/10 > 0) speedUp = speedUp * currentNumPackages/10;
+			
 			float speedX = 0;
 			float speedY = 1;
 			
@@ -194,14 +238,18 @@ public class ProcessingSimulation extends PApplet{
 			PImage img;
 			if (pack.getType() == Package.EMAIL_VIRUS)  
 				img = loadImage("email2.png");
-			else
-				img = loadImage("packageIcon2.png");
+			else if (pack.getType() == Package.CYN_PACKAGE)
+				img = loadImage("spoofedPackage.png");
+			else 
+				img = loadImage("spoofedPackage.png");
 			
 			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
-		} 
+		}
+		else if (pack.getType() == Package.CYN_PACKAGE) {
+			//increase target memory
+			network.getTargetNode().processPackage(pack);
+			}
 	}
-	
-	public void setNumOfSlaves(int num) { numOfSlaves = num; } 
 	
 	public void saveInitialNetwork() {
 		try {
@@ -294,7 +342,14 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 
-	public JTextArea getTerminal() {
-		return GUIcontrol.getTerminal();
+	public void startDDos(int ddosType) {
+		stage = ProcessingSimulation.STAGE_ATTACKING;
+		this.ddosType = ddosType;
 	}
+	
+	public JTextArea getTerminal() { return GUIcontrol.getTerminal(); }
+	
+	public void setNumOfSlaves(int num) { numOfSlaves = num; } 
+	
+	public int getStage() { return stage; }
 }

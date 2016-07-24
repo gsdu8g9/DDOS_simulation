@@ -9,6 +9,7 @@ public class Network {
 	private Set<Node> allNodes = new HashSet<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
 	private Node masterNode = null, targetNode = null;
+	private int numPackages = 0;
 	
 	public Network(ProcessingSimulation procSim) {
 		this.procSim = procSim;
@@ -61,4 +62,26 @@ public class Network {
 			}
 		}
 	}
+
+	public void sendFromAllSlaves(int packageType) {
+		for (Node n: allNodes) {
+			if (n.getComputer().getType() == Computer.SLAVE) {
+				Edge e = getEdge(n, targetNode);
+				Package pack = new Package(e, 32, packageType);
+				e.startSendingPackage(pack);
+				e.writeSendingStart(pack, procSim.getTerminal());
+			}
+		}
+	}
+	
+	public void incrementNumPackages() { numPackages++; }
+	public void decrementNumPackages() { numPackages--; }
+	
+	public int getNumPackages() { return numPackages; }
+	
+	public float getTagetLeftPercent() {
+		return (float)targetNode.getComputer().getMemBuffSizeCurrent() / (float)targetNode.getComputer().getMemBuffSize();
+	}
+
+	// function for ping
 }

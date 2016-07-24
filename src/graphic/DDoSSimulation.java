@@ -29,6 +29,9 @@ public class DDoSSimulation {
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal;
 	
+	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
+	private int packageType = 1, lastInputTerminal = 1;
+	
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
 	private int numSlavesConf = 0, ttlConf = 4, memoryConf = 0, packageConf = 32;
@@ -37,7 +40,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(26);
+		procGraphic.setNumOfSlaves(20);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -209,14 +212,25 @@ public class DDoSSimulation {
 		        	e.consume();
 		        	
 		        	String command = terminal.getText();
-		        	command = command.substring(1);
+		        	command = command.substring(lastInputTerminal);
 		        	
-		        	if (command.equals("start infecting")) {
+		        	if (command.equals("start infecting")) { //---------------------------------------------------------
 		        		if (procGraphic == null) {
 		        			terminal.append("\n>Configure network first... \n>");
+		        			updateLastInputTerminal();
 		        		} else 
 		        			procGraphic.infectSlaves();
 		        	} 
+		        	else if (command.equals("start ddos")) { //----------------------------------------------------------
+		        		if (procGraphic.getStage() == ProcessingSimulation.STAGE_IDLE)
+		        			procGraphic.startDDos(packageType);
+		        		else {
+		        			terminal.append("\n>Infect slaves first... \n>");
+		        			updateLastInputTerminal();
+		        		}
+		        	} 
+		        	
+		        	
 		        }
 		    }
 
@@ -360,6 +374,11 @@ public class DDoSSimulation {
 	
 	public JTextArea getTerminal() {
 		return terminal;
+	}
+	
+	public void updateLastInputTerminal(){
+		String textTerminal = terminal.getText();
+		lastInputTerminal = textTerminal.length();
 	}
 	
 	public static void main(String[] args) {

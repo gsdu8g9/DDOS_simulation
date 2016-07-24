@@ -25,16 +25,24 @@ public class Edge {
 		pack.setX(nodeFrom.getX());
 		pack.setY(nodeFrom.getY());
 		packages.add(pack);
+		network.incrementNumPackages();
 		if (pack.getType() == Package.EMAIL_VIRUS) virusPackage = pack;
 	}
 	
 	public Set<Package> getPackages() { return packages; }
 	public Package getVirusPackage() { return virusPackage; }
 	
-	public void deleteVirusPackage() { virusPackage = null; }
+	public void deleteVirusPackage() { 
+		virusPackage = null; 
+		network.decrementNumPackages();
+	}
 	
 	public void writeSendingStart(Package pack, JTextArea terminal) {
-		terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 
-						" to " + nodeTo.getComputer().getIpAddress());
+		if (pack.getType() == Package.EMAIL_VIRUS)
+			terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 
+							" to " + nodeTo.getComputer().getIpAddress());
+		else if (pack.getType() == Package.CYN_PACKAGE)
+			terminal.append("\n>Sending CYN package from " + nodeFrom.getComputer().getIpAddress() + 
+					" to " + nodeTo.getComputer().getIpAddress());
 	} 
 }

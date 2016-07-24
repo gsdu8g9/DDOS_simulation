@@ -1,13 +1,13 @@
 package bin;
 
 public class Package {
-	public static final int EMAIL_VIRUS = 1, PACKAGE = 2;
+	public static final int EMAIL_VIRUS = 0, CYN_PACKAGE = 1, ICMP_PACKAGE = 2;
 	
 	private Edge edge;
-	private int size;
-	private int type;
+	private int size, type;
 	private float cordX = 0, cordY = 0;
 	private boolean received = false;
+	private long timeInBuffer = 0;
 	
 	public Package(Edge e, int size, int type) {
 		edge = e;
@@ -42,4 +42,7 @@ public class Package {
 	}
 	
 	public int getType() { return type; }
+	public int getSize() { return size; }
+	
+	public void setTimeReceived(long time) { timeInBuffer = time;} 
 }

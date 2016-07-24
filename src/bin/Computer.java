@@ -6,18 +6,16 @@ public class Computer {
 	
 	private String ipAddress;
 	private String domain;
-	private int type, currSizeMemBuff, TTL;
+	private int type, TTL;
 	private int[] memBuffer;
+	private int maxSize = 0, currSize = 0;
 	
 	public Computer(String ipAddress, String domain, int type, int memSize) {
 		this.ipAddress = ipAddress;
 		this.domain = domain;
 		this.type = type;
-		currSizeMemBuff = 0;
-		TTL = 4;				// default TTL = 4 sec;
-		
-		//check for max memory
-		if (memSize > 0) memBuffer = new int[memSize];
+		TTL = 4;
+		maxSize = memSize;
 	}
 	
 	public Computer(String ipAddress, String domain, int type, int memSize, int TTL) {
@@ -25,15 +23,12 @@ public class Computer {
 		this.domain = domain;
 		this.type = type;
 		this.TTL = TTL;
-		currSizeMemBuff = 0;
-			
-		//check for max memory
-		if (memSize > 0) memBuffer = new int[memSize];
+		maxSize = memSize;
 	}
 	
 	public int getTTL() { return TTL; }
-	public int getMemBuffSizeCurrent() { return currSizeMemBuff;}
-	public int getMemBuffSize() {return memBuffer.length; }
+	public int getMemBuffSizeCurrent() { return currSize;}
+	public int getMemBuffSize() {return maxSize; }
 	public int getType() { return type; }
 	public String getIpAddress() { return ipAddress; }
 	public String getDomain() {return domain; }
@@ -45,6 +40,16 @@ public class Computer {
 		if (type == TARGET) return "TARGET";
 		
 		return "missing info";
+	}
+	
+	public void increaseMemory(int size) { 
+		if ((currSize + size) < maxSize) currSize += size;
+		else if ( currSize + size >= maxSize) currSize = maxSize;
+	} 
+	
+	public void decreaseMemory(int size) {
+		if ((currSize - size) > 0) currSize -= size;
+		else if (currSize > 0 && (currSize - size <= 0) ) currSize = 0;
 	}
 
 }

@@ -25,6 +25,7 @@ public class Node {
 	}
 	
 	public void setInfected(boolean inf) { infected = inf; }
+	
 	public boolean getInfected() { return infected; }
 	
 	public Computer getComputer() { return computer; }
@@ -38,4 +39,15 @@ public class Node {
 	public int getX() { return cordX; }
 	
 	public int getY() { return cordY; }
+	
+	public boolean processPackage(Package pack) {
+		//check if there is return ip in network, and return ACK to it
+		
+		// it ip doesn't exist -> increase memory and set time when package is received
+		long currSec = System.currentTimeMillis()/1000;
+		pack.setTimeReceived(currSec);
+		computer.increaseMemory(pack.getSize());
+		return false;
+		
+	}
 }
