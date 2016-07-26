@@ -40,7 +40,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(20);
+		procGraphic.setNumOfSlaves(8);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}

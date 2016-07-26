@@ -24,6 +24,20 @@ public class ProcessingSimulation extends PApplet{
 	private PImage networkBackground;
 	private boolean newImageToLoad = false, firstImageLoad = false;
 	private float angleTargetMemory = 0;
+	private Node mostLeftDown, mostRightDown;
+	private int numLines;
+	private Set<LineCoords> ackLinesToDelete = new HashSet<LineCoords>();
+	
+	private class LineCoords {
+		public float xFrom, yFrom, xTo, yTo;
+		
+		public LineCoords(float x1, float y1, float x2, float y2) {
+			xFrom = x1;
+			yFrom = y1;
+			xTo = x2;
+			yTo = y2;
+		}
+	}
 
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
@@ -152,6 +166,9 @@ public class ProcessingSimulation extends PApplet{
 				lastPackageWave = currSec;
 				network.sendFromAllSlaves(packageType);
 			}
+			else if ((currSec - lastPackageWave) >= 4) {
+				deletePreviousAckLines();
+			}
 	}
 	
 	public void draw() {
@@ -173,7 +190,10 @@ public class ProcessingSimulation extends PApplet{
 		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 		
 		drawAllPackages();
-		
+		drawMemoryInfoCircle(angleTargetMemory);
+	}
+	
+	private void drawMemoryInfoCircle(float angleTargetMemory) {
 		Color color = null;
 		if ((angleTargetMemory/36)*10 < 30) color = Color.GREEN;
 		else if ((angleTargetMemory/36)*10 > 30 && (angleTargetMemory/36)*10 < 60) color = Color.ORANGE;
@@ -202,6 +222,40 @@ public class ProcessingSimulation extends PApplet{
 			for (Package pack: allPackages)	
 				drawPackage(pack);
 		}
+	}
+	
+	private void deleteAckLines() {
+		
+	}
+	
+	private void deletePreviousAckLines() {
+		for (LineCoords coord : ackLinesToDelete) {
+			fill(255);
+			line(coord.xFrom, coord.yFrom, coord.xTo, coord.yTo);
+		}
+		ackLinesToDelete.clear();
+	}
+	
+	private void drawACK_toUnknown(int ID) {
+		
+		Node nodeTo = mostLeftDown;
+		int id = ID%(numOfSlaves/numLines);
+		if (id > numOfSlaves/(numLines*2)) nodeTo = mostRightDown;
+		
+		float xFromArrow = network.getTargetNode().getX() + 15;
+		float yFromArrow = network.getTargetNode().getY();
+		float xToArrow = nodeTo.getX();
+		float yToArrow = nodeTo.getY() + ( network.getTargetNode().getY() - nodeTo.getY() ) / 4 ;
+		
+		Random random = new Random();
+		float  randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		
+		// style line, draw arrows
+		stroke(3);
+		fill(Color.GREEN.getRGB());
+		line(xFromArrow, yFromArrow, xToArrow, randomY);
+		LineCoords coords = new LineCoords(xFromArrow, yFromArrow, xToArrow, randomY);
+		ackLinesToDelete.add(coords);
 	}
 	
 	private void drawPackage(Package pack) {
@@ -246,8 +300,9 @@ public class ProcessingSimulation extends PApplet{
 			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
 		}
 		else if (pack.getType() == Package.CYN_PACKAGE) {
-			//increase target memory
-			network.getTargetNode().processPackage(pack);
+			// increase target memory
+			boolean targetExists = network.getTargetNode().processPackage(pack);
+			drawACK_toUnknown(pack.getEdge().getNodeFrom().getID());
 			}
 	}
 	
@@ -290,7 +345,13 @@ public class ProcessingSimulation extends PApplet{
 			
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
-							
+			
+			if (j == n-1 && i == numOfSlaves/n - 1)
+				mostRightDown = nodeSlave;
+			
+			if (i == n-1 && i == 0)
+				mostLeftDown = nodeSlave;
+			
 			//add edges: master-slave, slave-target
 			Edge edge1 = new Edge(network, masterNode, nodeSlave);
 			Edge edge2 = new Edge(network, nodeSlave, targetNode);
@@ -319,12 +380,12 @@ public class ProcessingSimulation extends PApplet{
 		Node targetNode = new Node(targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		network.addNode(targetNode);
 		
-		if (numOfSlaves <= 60 && numOfSlaves > 50) makeNetworkIn_n_lines(masterNode, targetNode, 6);
-		else if (numOfSlaves <= 50 && numOfSlaves > 40) makeNetworkIn_n_lines(masterNode, targetNode, 5);
-		else if (numOfSlaves <= 40 && numOfSlaves > 30) makeNetworkIn_n_lines(masterNode, targetNode, 4);
-		else if (numOfSlaves <= 30 && numOfSlaves > 20) makeNetworkIn_n_lines(masterNode, targetNode, 3);
-		else if (numOfSlaves <= 20 && numOfSlaves > 10) makeNetworkIn_n_lines(masterNode, targetNode, 2);
-		else if (numOfSlaves <= 10) makeNetworkIn_n_lines(masterNode, targetNode, 1);
+		if (numOfSlaves <= 60 && numOfSlaves > 50) 		{ makeNetworkIn_n_lines(masterNode, targetNode, 6); numLines = 6; }
+		else if (numOfSlaves <= 50 && numOfSlaves > 40) { makeNetworkIn_n_lines(masterNode, targetNode, 5); numLines = 5; }
+		else if (numOfSlaves <= 40 && numOfSlaves > 30) { makeNetworkIn_n_lines(masterNode, targetNode, 4); numLines = 4; }
+		else if (numOfSlaves <= 30 && numOfSlaves > 20) { makeNetworkIn_n_lines(masterNode, targetNode, 3); numLines = 3; }
+		else if (numOfSlaves <= 20 && numOfSlaves > 10) { makeNetworkIn_n_lines(masterNode, targetNode, 2); numLines = 2; }
+		else if (numOfSlaves <= 10) 					{ makeNetworkIn_n_lines(masterNode, targetNode, 1); numLines = 1; }
 		
 	}
 
