@@ -2,12 +2,13 @@ package bin;
 
 public class Package {
 	public static final int EMAIL_VIRUS = 0, CYN_PACKAGE = 1, ICMP_PACKAGE = 2;
+	public static final int INIT = 0, WAITING = 1, TRAVELING = 2, RECEIVED = 3;
 	
 	private Edge edge;
 	private int size, type;
 	private float cordX = 0, cordY = 0;
-	private boolean received = false;
-	private long timeInBuffer = 0;
+	private int status = Package.INIT;
+	private long timeStartSending = 0, timeReceived = 0;
 	
 	public Package(Edge e, int size, int type) {
 		edge = e;
@@ -15,39 +16,39 @@ public class Package {
 		this.type = type;
 	}
 	
-	public void setX(float x) { 
-		cordX = x; 
-		boolean over = packageReceived();
-		if (over) received = true;
+	public int getStatus() { return status; }
+	
+	public void setStatus(int stat) { status = stat; }
+	
+	public long getTimeStartSending() { return timeStartSending; }
+	
+	public void setTimeStartSending(long newTime) { timeStartSending = newTime; }
+	
+	public long getReceivedTime() { return timeReceived; }
+	
+	public void setReceivedTime(long newTime) { timeReceived = newTime; }
+	
+	public long getTimeInBuffer() {
+		long currSec = System.currentTimeMillis()/1000;
+		return (currSec - timeReceived);
 	}
-	public void setY(float y) { 
-		cordY = y; 
-		boolean over = packageReceived();
-		if (over) received = true;
-	}
+	
+	public void setX(float x) { cordX = x; }
+	
+	public void setY(float y) { cordY = y; }
+	
 	public float getX() { return cordX; }
+	
 	public float getY() { return cordY; }
 	
 	public Edge getEdge() { return edge; }
 	
 	public boolean packageReceived() {
-		int endX = edge.getNodeTo().getX();
-		int endY = edge.getNodeTo().getY();
-		
-		//if (Math.ceil(cordX) == endX || Math.ceil(cordY) == endY)
-		//	return true;
-		//if ((cordX < (endX+5) && cordX > (endX-5)) && (cordY < (endY+5) && cordX > (endX-5)))
-		//	return true;
-		//else return false;
-		
-		if ( cordY >= endY )
-			return true;
-		else 
-			return false;
+		if ( cordY >= edge.getNodeTo().getY() ) return true;
+		else return false;
 	}
 	
 	public int getType() { return type; }
-	public int getSize() { return size; }
 	
-	public void setTimeReceived(long time) { timeInBuffer = time;} 
+	public int getSize() { return size; }
 }

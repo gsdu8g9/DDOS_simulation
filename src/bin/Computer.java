@@ -2,7 +2,7 @@ package bin;
 
 public class Computer {
 	
-	public static final int MASTER = 0, MASTER_SLAVE = 1, SLAVE = 2, TARGET = 3;
+	public static final int MASTER = 0, MASTER_SLAVE = 1, SLAVE = 2, REFLECTING =3, TARGET = 4;
 	
 	private String ipAddress;
 	private String domain;

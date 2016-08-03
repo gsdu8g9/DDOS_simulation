@@ -45,7 +45,7 @@ public class Node {
 		
 		// it ip doesn't exist -> increase memory and set time when package is received
 		long currSec = System.currentTimeMillis()/1000;
-		pack.setTimeReceived(currSec);
+		pack.setReceivedTime(currSec);
 		computer.increaseMemory(pack.getSize());
 		return false;
 		
