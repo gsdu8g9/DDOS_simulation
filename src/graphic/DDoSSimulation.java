@@ -40,7 +40,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(8);
+		procGraphic.setNumOfSlaves(15);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -153,7 +153,7 @@ public class DDoSSimulation {
 												
 		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
 		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
-		cSlavesConfig.add(new JLabel("TTL time:"));				cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
+		cSlavesConfig.add(new JLabel("Memory in time:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
 		cSlavesConfig.add(new JLabel("Package size: "));		cSlavesConfig.add(packagesizeTF); 	cSlavesConfig.add(dummy10);
 																									
 		JButton submitConfiguration = new JButton("Configure");					

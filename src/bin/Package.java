@@ -34,11 +34,16 @@ public class Package {
 		int endX = edge.getNodeTo().getX();
 		int endY = edge.getNodeTo().getY();
 		
-		if (Math.ceil(cordX) == endX || Math.ceil(cordY) == endY)
+		//if (Math.ceil(cordX) == endX || Math.ceil(cordY) == endY)
+		//	return true;
+		//if ((cordX < (endX+5) && cordX > (endX-5)) && (cordY < (endY+5) && cordX > (endX-5)))
+		//	return true;
+		//else return false;
+		
+		if ( cordY >= endY )
 			return true;
-		if ((cordX < (endX+5) && cordX > (endX-5)) && (cordY < (endY+5) && cordX > (endX-5)))
-			return true;
-		else return false;
+		else 
+			return false;
 	}
 	
 	public int getType() { return type; }

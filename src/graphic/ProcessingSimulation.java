@@ -263,7 +263,7 @@ public class ProcessingSimulation extends PApplet{
 			float x = pack.getX();
 			float y = pack.getY();
 			
-			float speedUp = 3;
+			float speedUp = 7;
 			
 			if (currentNumPackages/10 > 0) speedUp = speedUp * currentNumPackages/10;
 			
