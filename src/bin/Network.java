@@ -11,12 +11,26 @@ public class Network {
 	private Set<Node> slaves = new HashSet<Node>();
 	private Set<Node> reflectors = new HashSet<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
+	private Map<String, Node> ipAddressesMap = new HashMap<String, Node>();			// map for fast ipAddress searching
 	private Node masterNode = null, targetNode = null;
 	private int numPackages = 0;
 	
 	public Network(ProcessingSimulation procSim) {
 		this.procSim = procSim;
 	}
+	
+	public Node getMasterNode() 	{ return masterNode; }
+	public Node getTargetNode() 	{ return targetNode; }
+	public Set<Node> getAllNodes()	{ return allNodes; }
+	public Set<Node> getMasterSlaveNodes() { return masterSlaves; }
+	public Set<Node> getSlaveNodes() { return slaves; }
+	public Set<Node> getReflectorNodes() { return reflectors; }
+	public Set<Edge> getAllEdges() 	{ return allEdges; }
+	public void incrementNumPackages() { numPackages++; }
+	public void decrementNumPackages() { numPackages--; }
+	public int getNumPackages() 	{ return numPackages; }
+	
+	public Node findIPAddress(String ipAddress) { return ipAddressesMap.get(ipAddress); }
 	
 	public void addNode(Node n) {
 		if (n.getComputer().getType() == Computer.MASTER)
@@ -25,6 +39,7 @@ public class Network {
 			targetNode = n;
 		
 		allNodes.add(n);
+		ipAddressesMap.put(n.getComputer().getIpAddress(), n);
 	}
 	
 	public void addMasterSlaveNode(Node n) {
@@ -40,30 +55,19 @@ public class Network {
 	public void addEdge(Edge e) {
 		allEdges.add(e);
 	}
-	
-	public Node getMasterNode() { return masterNode; }
-	public Node getTargetNode() { return targetNode; }
-	
-	public Set<Node> getAllNodes() { return allNodes; }
-	public Set<Node> getMasterSlaveNodes() { return masterSlaves; }
-	public Set<Node> getSlaveNodes() { return slaves; }
-	public Set<Node> getReflectorNodes() { return reflectors; }
-	public Set<Edge> getAllEdges() { return allEdges; }
-	
+
 	public Edge getEdge(Node from, Node to) {
 		if (from == null || to == null) return null;
 		
 		for(Edge e: allEdges)
-			if (e.getNodeFrom().equals(from) && e.getNodeTo().equals(to))
-				return e;
+			if (e.getNodeFrom().equals(from) && e.getNodeTo().equals(to)) return e;
 		
 		return null;
 	}
 	
 	public Node getSlaveById(int id) { 
 		for (Node n: allNodes)
-			if (n.getID() == id)
-				return n;
+			if (n.getID() == id) return n;
 		
 		return null;
 	}
@@ -102,14 +106,10 @@ public class Network {
 		}
 	}
 	
-	public void incrementNumPackages() { numPackages++; }
-	public void decrementNumPackages() { numPackages--; }
-	
-	public int getNumPackages() { return numPackages; }
-	
 	public float getTagetLeftPercent() {
 		return (float)targetNode.getComputer().getMemBuffSizeCurrent() / (float)targetNode.getComputer().getMemBuffSize();
 	}
 
+	
 	// function for ping
 }

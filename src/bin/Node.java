@@ -4,21 +4,22 @@ import java.util.*;
 
 public class Node {
 	private static int generatorID = 1;
-	
-	private int cordX, cordY;
-	private int id;
+	private Network network;
+	private int cordX, cordY, id;
 	private Set<Node> neighbors = new HashSet<Node> ();
 	private Computer computer;
 	private boolean infected = false;
 	
-	public Node(Computer comp, int x, int y){
+	public Node(Network net, Computer comp, int x, int y){
+		network = net;
 		computer = comp;
 		cordX = x;
 		cordY = y;
 		id = generatorID++;
 	}
 	
-	public Node(int x, int y) {
+	public Node(Network net, int x, int y) {
+		network = net;
 		id = generatorID++;
 		cordX = x;
 		cordY = y;
@@ -41,15 +42,16 @@ public class Node {
 	
 	public int getY() { return cordY; }
 	
-	public boolean processPackage(Package pack) {
-		//check if there is return ip in network, and return ACK to it
+	public Node processPackage(Package pack) {
+		//check if there is return IP in network, and return ACK to it
+		Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
 		
-		// it ip doesn't exist -> increase memory and set time when package is received
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setReceivedTime(currSec);
 		computer.increaseMemory(pack.getSize());
+
 		computer.addReceivedPackage(pack);
-		return false;
-		
+	
+		return retAckNode;
 	}
 }
