@@ -17,6 +17,9 @@ public class ProcessingSimulation extends PApplet{
 							 NODES_PER_LINE = 10, PIXEL_START_TOP = 50;
 	
 	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4;
+	
+	public static final int TIMER_ACK_PROCESSING = 2;
+	
 	private int numOfSlaves, ddosType, infected = 0, currentNumPackages = 0;
 	private long lastPackageWave = 0;
 	private Network network;
@@ -30,6 +33,7 @@ public class ProcessingSimulation extends PApplet{
 	private Set<LineCoords> ackLinesToDelete = new HashSet<LineCoords>();
 	private List<Package> packageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
+	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
 	
 	private class LineCoords {
 		public float xFrom, yFrom, xTo, yTo;
@@ -190,7 +194,6 @@ public class ProcessingSimulation extends PApplet{
 			}
 		} else if (stage == ProcessingSimulation.STAGE_ATTACKING) {
 			generateCYNpackages(ddosType);
-			//network.sendFromAllSlaves(1);
 		}
 	}
 	
@@ -200,14 +203,10 @@ public class ProcessingSimulation extends PApplet{
 		if (lastPackageWave == 0) {
 			lastPackageWave = currSec;
 			network.sendFromAllSlaves(packageType);
-		} else 
-			if ((currSec - lastPackageWave) >= 4) {  
-				lastPackageWave = currSec;
-				network.sendFromAllSlaves(packageType);
-			}
-			//else if ((currSec - lastPackageWave) >= 2) {
-			//	deletePreviousAckLines();
-			//}
+		} else if ((currSec - lastPackageWave) >= 4) {  
+			lastPackageWave = currSec;
+			network.sendFromAllSlaves(packageType);
+		}
 	}
 	
 	public void draw() {
@@ -226,9 +225,11 @@ public class ProcessingSimulation extends PApplet{
 			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
 		}
 		
+		// insert part for pause stage
 		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 		
-		drawAllPackages();
+		drawAllTravellingPackages();
+		drawAllAckPackages();
 		drawMemoryInfoCircle(angleTargetMemory);
 	}
 	
@@ -261,11 +262,9 @@ public class ProcessingSimulation extends PApplet{
 		if (packageQueue.size() > 0)
 			head = packageQueue.get(0);
 		
-		while (head != null && head.getTimeStartSending() == currSec && head.getStatus() == Package.WAITING) {
+		while (head != null && head.getTimeStartSending() <= currSec && head.getStatus() == Package.WAITING) {
 			head.setStatus(Package.TRAVELING);
 			travellingPackages.add(head);
-			getTerminal().append("\n> added travelling ");
-			GUIcontrol.updateLastInputTerminal();
 			Edge edge = head.getEdge();
 			edge.startSendingPackage(head);
 			edge.writeSendingStart(head, getTerminal());
@@ -278,26 +277,37 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 	
-	private void drawAllPackages() {
-		//Set<Edge> allEdges = network.getAllEdges();
-		//for (Edge e: allEdges) {
-		//	Set<Package> allPackages = e.getPackages();
-		//	for (Package pack: allPackages)	
-		//		if (pack.getStatus() == Package.TRAVELING)
-		//			drawPackage(pack);
-		//}
+	private void drawAllAckPackages() {
+		long currSec = System.currentTimeMillis()/1000;
+		Set<UnknownPackage> newAckPackages = new HashSet<UnknownPackage>();
 		
-		for(Package pack: travellingPackages) {
-			if (pack.getStatus() == Package.TRAVELING)
-				drawPackage(pack);
-		}
+		for (UnknownPackage ack: ackPackages)
+			if (currSec - ack.getTimeCreated() < TIMER_ACK_PROCESSING) {
+				newAckPackages.add(ack);
+				drawAckPackage_Helper(ack);
+			}
 		
-		//remove RECEIVED from this list
-		
+		ackPackages = newAckPackages;
 	}
 	
-	private void deleteAckLines() {
+	private void drawAckPackage_Helper(UnknownPackage ack) {
+		// style line, draw arrows
+        stroke(3);
+        fill(Color.GREEN.getRGB());
+        line(network.getTargetNode().getX(), network.getTargetNode().getY(), ack.getXTo(), ack.getYTo());
+	}
+	
+	private void drawAllTravellingPackages() {
+		Set<Package> newTravellingPackages = new HashSet<Package>();
 		
+		for(Package pack: travellingPackages) {
+			if (pack.getStatus() == Package.TRAVELING) {
+				drawPackage(pack);
+				newTravellingPackages.add(pack);
+			}
+		}
+		//removing received from list
+		travellingPackages = newTravellingPackages;
 	}
 	
 	private void deletePreviousAckLines() {
@@ -308,75 +318,76 @@ public class ProcessingSimulation extends PApplet{
 		ackLinesToDelete.clear();
 	}
 	
-	private void drawACK_toUnknown(int ID) {
+	private void drawPackage_Helper(Package pack) {
+		float x = pack.getX();
+		float y = pack.getY();
 		
-		Node nodeTo = mostLeftDown;
-		int id = ID%(numOfSlaves/numLines);
-		if (id > numOfSlaves/(numLines*2)) nodeTo = mostRightDown;
+		float speedUp = 7;
 		
-		float xFromArrow = network.getTargetNode().getX() + 15;
-		float yFromArrow = network.getTargetNode().getY();
-		float xToArrow = nodeTo.getX();
-		float yToArrow = nodeTo.getY() + ( network.getTargetNode().getY() - nodeTo.getY() ) / 4 ;
+		if (currentNumPackages/10 > 0) speedUp = speedUp * currentNumPackages/10;
 		
-		Random random = new Random();
-		float  randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		float speedX = 0;
+		float speedY = 1;
 		
-		// style line, draw arrows
-		stroke(3);
-		fill(Color.GREEN.getRGB());
-		line(xFromArrow, yFromArrow, xToArrow, randomY);
-		LineCoords coords = new LineCoords(xFromArrow, yFromArrow, xToArrow, randomY);
-		ackLinesToDelete.add(coords);
+		if (pack.getEdge().getNodeFrom().getX() > pack.getEdge().getNodeTo().getX()) {
+			speedX = (float)(pack.getEdge().getNodeFrom().getX() - pack.getEdge().getNodeTo().getX()) / 
+					 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY());
+			x = x - speedX*speedUp;
+		}
+		else if (pack.getEdge().getNodeFrom().getX() < pack.getEdge().getNodeTo().getX()) {
+			speedX = (float)(pack.getEdge().getNodeTo().getX() - pack.getEdge().getNodeFrom().getX()) / 
+					 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY());
+			x = x + speedX*speedUp;
+		}
+		
+		y = y + speedY*speedUp;
+		
+		pack.setX(x);
+		pack.setY(y);
+		
+		stroke(0);
+		fill(175);
+		
+		PImage img;
+		if (pack.getType() == Package.EMAIL_VIRUS)  
+			img = loadImage("email2.png");
+		else if (pack.getType() == Package.CYN_PACKAGE)
+			img = loadImage("spoofedPackage.png");
+		else 
+			img = loadImage("spoofedPackage.png");
+		
+		image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
 	}
 	
 	private void drawPackage(Package pack) {
+		
 		if (!(pack.packageReceived())) {
-			float x = pack.getX();
-			float y = pack.getY();
-			
-			float speedUp = 7;
-			
-			if (currentNumPackages/10 > 0) speedUp = speedUp * currentNumPackages/10;
-			
-			float speedX = 0;
-			float speedY = 1;
-			
-			if (pack.getEdge().getNodeFrom().getX() > pack.getEdge().getNodeTo().getX()) {
-				speedX = (float)(pack.getEdge().getNodeFrom().getX() - pack.getEdge().getNodeTo().getX()) / 
-						 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY());
-				x = x - speedX*speedUp;
-			}
-			else if (pack.getEdge().getNodeFrom().getX() < pack.getEdge().getNodeTo().getX()) {
-				speedX = (float)(pack.getEdge().getNodeTo().getX() - pack.getEdge().getNodeFrom().getX()) / 
-						 (float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY());
-				x = x + speedX*speedUp;
-			}
-			
-			y = y + speedY*speedUp;
-			
-			pack.setX(x);
-			pack.setY(y);
-			
-			stroke(0);
-			fill(175);
-			
-			PImage img;
-			if (pack.getType() == Package.EMAIL_VIRUS)  
-				img = loadImage("email2.png");
-			else if (pack.getType() == Package.CYN_PACKAGE)
-				img = loadImage("spoofedPackage.png");
-			else 
-				img = loadImage("spoofedPackage.png");
-			
-			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+			drawPackage_Helper(pack);
 		}
-		else if (pack.getType() == Package.CYN_PACKAGE) {
-			// increase target memory
-			network.getTargetNode().processPackage(pack);
+		// package is received - increase target memory, make ACK package, prepare ACK package for drawing
+		else if (pack.getType() == Package.CYN_PACKAGE) {	
 			pack.setStatus(Package.RECEIVED);
+			Node retNode = network.getTargetNode().processPackage(pack);
 			
-			//drawACK_toUnknown(pack.getEdge().getNodeFrom().getID());
+			// spoofed ip address
+			if (retNode == null) {
+				int borderXTop = mostRightDown.getX();
+				int borderYTop = mostRightDown.getY();
+				float yFromArrow = network.getTargetNode().getY();
+				
+				float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
+				
+				Random random = new Random();
+				float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+				
+				UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
+				
+				long currSec = System.currentTimeMillis()/1000;
+				unknown.setTimeCreated(currSec);
+				
+				ackPackages.add(unknown);
+			}
+			
 			}
 	}
 	
@@ -410,12 +421,12 @@ public class ProcessingSimulation extends PApplet{
 					if (toFill == 0) lastFilling = true;
 				}
 			}
-			if (n == 6) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_6*(j+1));
-			if (n == 5) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_5*(j+1));
-			if (n == 4) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_4*(j+1));
-			if (n == 3) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_3*(j+1));
-			if (n == 2) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_2*(j+1));
-			if (n == 1) nodeSlave = new Node( PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_1*(j+1));
+			if (n == 6) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_6*(j+1));
+			if (n == 5) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_5*(j+1));
+			if (n == 4) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_4*(j+1));
+			if (n == 3) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_3*(j+1));
+			if (n == 2) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_2*(j+1));
+			if (n == 1) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_1*(j+1));
 			
 			if (lastFilling) padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (numOfSlaves/n);
 			
@@ -449,11 +460,11 @@ public class ProcessingSimulation extends PApplet{
 		network = new Network(this);
 		
 		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.MASTER, 2048);
-		Node masterNode = new Node(masterComputer, APPLET_WIDTH/2, 50);
+		Node masterNode = new Node(network, masterComputer, APPLET_WIDTH/2, 50);
 		network.addNode(masterNode);
 		
 		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, 2048);
-		Node targetNode = new Node(targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
+		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		network.addNode(targetNode);
 		
 		if ( numOfSlaves > 60) 							makeNetworkForManyReflected(masterNode, targetNode);
@@ -475,7 +486,7 @@ public class ProcessingSimulation extends PApplet{
 			//Random rand = new Random(i);
 			int randomX = i%10 * X;
 			int randomY = i/10 * Y;
-			Node nodeMasterSlave = new Node( PIXEL_START_LEFT+randomX, 2*PIXEL_START_TOP+randomY);
+			Node nodeMasterSlave = new Node(network, PIXEL_START_LEFT+randomX, 2*PIXEL_START_TOP+randomY);
 					
 			Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, 2048);
 			nodeMasterSlave.setComputer(newMasterSlave);
@@ -487,11 +498,11 @@ public class ProcessingSimulation extends PApplet{
 			nodeMasterSlave.addNeighbor(masterNode);
 			network.addNode(nodeMasterSlave);
 			
-			Node nodeSlave = new Node( PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+120);
+			Node nodeSlave = new Node(network, PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+120);
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
 			
-			Node nodeSlave2 = new Node( PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+120);
+			Node nodeSlave2 = new Node(network, PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+120);
 			Computer newSlave2 = new Computer("216.58.214."+nodeSlave2.getID(),"slave"+nodeSlave2.getID(), Computer.SLAVE, 2048);
 			nodeSlave2.setComputer(newSlave2);
 			
@@ -507,11 +518,11 @@ public class ProcessingSimulation extends PApplet{
 			nodeMasterSlave.addNeighbor(nodeSlave2);
 			network.addNode(nodeSlave2);						
 			
-			Node nodeReflector1 = new Node( PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+300);
+			Node nodeReflector1 = new Node(network, PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+300);
 			Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING, 2048);
 			nodeReflector1.setComputer(newReflector1);
 			
-			Node nodeReflector2 = new Node( PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+300);
+			Node nodeReflector2 = new Node(network, PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+300);
 			Computer newReflector2 = new Computer("216.58.214."+nodeReflector2.getID(),"slave"+nodeReflector2.getID(), Computer.REFLECTING, 2048);
 			nodeReflector2.setComputer(newReflector2);
 			
@@ -547,7 +558,7 @@ public class ProcessingSimulation extends PApplet{
 			//Random rand = new Random(i);
 			int randomX = i%10 * X;
 			int randomY = i/10 * Y;
-			Node nodeMasterSlave = new Node( PIXEL_START_LEFT+randomX, 2*PIXEL_START_TOP+randomY);
+			Node nodeMasterSlave = new Node(network, PIXEL_START_LEFT+randomX, 2*PIXEL_START_TOP+randomY);
 					
 			Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, 2048);
 			nodeMasterSlave.setComputer(newMasterSlave);
@@ -559,11 +570,11 @@ public class ProcessingSimulation extends PApplet{
 			nodeMasterSlave.addNeighbor(masterNode);
 			network.addNode(nodeMasterSlave);
 			
-			Node nodeSlave = new Node( PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+200);
+			Node nodeSlave = new Node(network, PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+200);
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
 			
-			Node nodeSlave2 = new Node( PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+200);
+			Node nodeSlave2 = new Node(network, PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+200);
 			Computer newSlave2 = new Computer("216.58.214."+nodeSlave2.getID(),"slave"+nodeSlave2.getID(), Computer.SLAVE, 2048);
 			nodeSlave2.setComputer(newSlave2);
 			
