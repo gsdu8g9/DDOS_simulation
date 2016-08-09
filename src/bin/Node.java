@@ -24,6 +24,7 @@ public class Node {
 		cordY = y;
 	}
 	
+	
 	public void setInfected(boolean inf) { infected = inf; }
 	
 	public boolean getInfected() { return infected; }
@@ -47,6 +48,7 @@ public class Node {
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setReceivedTime(currSec);
 		computer.increaseMemory(pack.getSize());
+		computer.addReceivedPackage(pack);
 		return false;
 		
 	}

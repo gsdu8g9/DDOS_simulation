@@ -7,6 +7,9 @@ import graphic.ProcessingSimulation;
 public class Network {
 	private ProcessingSimulation procSim;
 	private Set<Node> allNodes = new HashSet<Node>();
+	private Set<Node> masterSlaves = new HashSet<Node>();
+	private Set<Node> slaves = new HashSet<Node>();
+	private Set<Node> reflectors = new HashSet<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
 	private Node masterNode = null, targetNode = null;
 	private int numPackages = 0;
@@ -24,6 +27,16 @@ public class Network {
 		allNodes.add(n);
 	}
 	
+	public void addMasterSlaveNode(Node n) {
+		masterSlaves.add(n);
+	}
+	public void addSlaveNode(Node n) {
+		slaves.add(n);
+	}
+	public void addReflectorNode(Node n) {
+		reflectors.add(n);
+	}
+	
 	public void addEdge(Edge e) {
 		allEdges.add(e);
 	}
@@ -32,6 +45,9 @@ public class Network {
 	public Node getTargetNode() { return targetNode; }
 	
 	public Set<Node> getAllNodes() { return allNodes; }
+	public Set<Node> getMasterSlaveNodes() { return masterSlaves; }
+	public Set<Node> getSlaveNodes() { return slaves; }
+	public Set<Node> getReflectorNodes() { return reflectors; }
 	public Set<Edge> getAllEdges() { return allEdges; }
 	
 	public Edge getEdge(Node from, Node to) {
@@ -63,6 +79,8 @@ public class Network {
 				pack.setTimeStartSending(currSec + inc++);
 				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
+				
+				e.getNodeFrom().getComputer().addSentPackage(pack);
 			}
 		}
 	}
@@ -78,6 +96,8 @@ public class Network {
 				pack.setTimeStartSending(currSec + inc++);
 				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
+				
+				n.getComputer().addSentPackage(pack);
 			}
 		}
 	}

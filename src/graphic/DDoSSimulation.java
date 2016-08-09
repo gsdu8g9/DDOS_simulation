@@ -8,9 +8,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Set;
 
 import javax.swing.*;
 import bin.*;
+import bin.Package;
 import javafx.scene.layout.Border;
 import processing.core.*;
 
@@ -23,11 +25,11 @@ public class DDoSSimulation {
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
-	private JPanel configurePanel, terminalPanel, detailsPanel, startingPanel, ipMainPanel;
+	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
-	private JTextArea terminal;
+	private JTextArea terminal, packages_received_detail, packages_sent_detail;
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	private int packageType = 1, lastInputTerminal = 1;
@@ -40,7 +42,7 @@ public class DDoSSimulation {
 		//makePopUpStart();
 		makeWindow(true,true,true,true);
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(6);
+		procGraphic.setNumOfSlaves(50);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -178,8 +180,9 @@ public class DDoSSimulation {
 		domain_detail = new JLabel();		domain_detail.setFont(descriptionFont);		
 		ttl_detail = new JLabel();			ttl_detail.setFont(descriptionFont);		
 		memory_detail = new JLabel();		memory_detail.setFont(descriptionFont);		
-		type_detail = new JLabel();			type_detail.setFont(descriptionFont);		
+		type_detail = new JLabel();			type_detail.setFont(descriptionFont);	
 		
+			
 		JTextField dummy1 = new JTextField("Dummy textfield.");		dummy1.setVisible(false);
 		JTextField dummy2 = new JTextField("Dummy textfield.");		dummy2.setVisible(false);
 		JTextField dummy3 = new JTextField("Dummy textfield.");		dummy3.setVisible(false);
@@ -194,16 +197,44 @@ public class DDoSSimulation {
 		detailsPanel.add(Memory);		detailsPanel.add(memory_detail);		detailsPanel.add(dummy5);
 		detailsPanel.add(TTL);			detailsPanel.add(ttl_detail);			detailsPanel.add(dummy6);
 		
-		configurePanel.add(detailsPanel);
+		configurePanel.add(detailsPanel, BorderLayout.CENTER);
 		detailsPanel.setVisible(false); 	// -> will be visible when mouse click on component
+		//history panel --------------------------------------------------------------------------------
 		
+		historyPanel = new JPanel(new GridLayout(2,1,3,3));
+		historyPanel.setBorder(BorderFactory.createTitledBorder("Packages history"));
+		
+		packages_received_detail = new JTextArea(12,65);
+		packages_received_detail.setBackground(Color.BLACK);
+		packages_received_detail.setForeground(Color.RED);
+		packages_received_detail.setFont(terminalFont);
+		JScrollPane sp_packReceived = new JScrollPane(packages_received_detail);
+		
+		packages_sent_detail = new JTextArea(12,65);
+		packages_sent_detail.setBackground(Color.BLACK);
+		packages_sent_detail.setForeground(Color.MAGENTA);
+		packages_sent_detail.setFont(terminalFont);
+		JScrollPane sp_packSent = new JScrollPane(packages_sent_detail);
+		
+		//JLabel received = new JLabel("Received packages"); 		received.setFont(labelFont); 
+		//JLabel sent = new JLabel("Sent packages"); 				sent.setFont(labelFont);
+		
+		//historyPanel.add(received);
+		historyPanel.add(sp_packReceived);
+		//historyPanel.add(sent);
+		historyPanel.add(sp_packSent);
+		
+		configurePanel.add(historyPanel, BorderLayout.SOUTH);
+		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		// terminal tab --------------------------------------------------------------------------------
+		
 		
 		terminal = new JTextArea(44,67);
 		terminal.setBackground(Color.BLACK);
 		terminal.setForeground(Color.WHITE);
 		terminal.setFont(terminalFont);
 		terminal.append(">");
+		JScrollPane sp = new JScrollPane(terminal);
 		
 		terminal.addKeyListener(new KeyListener(){
 		    @Override
@@ -242,7 +273,7 @@ public class DDoSSimulation {
 
 		});
 		
-		terminalPanel.add(terminal);
+		terminalPanel.add(sp);
 		
 		tabs.addTab("Configure", configurePanel);
 		tabs.addTab("Terminal", terminalPanel);
@@ -368,9 +399,36 @@ public class DDoSSimulation {
 		type_detail.setText(": " + comp.getTypeString());
 		ttl_detail.setText(": " + comp.getTTL());
 		memory_detail.setText(": " + comp.getMemBuffSizeCurrent() + " / " + comp.getMemBuffSize());
+		packages_received_detail.setText("RECEIVED PACKAGES\n\n");
+		packages_sent_detail.setText("SENT PACKAGES\n\n");
+		
+		int numPackRec = 0;
+		Set<Package> received = comp.getReceivedPackages();
+		for (Package pack: received) {
+			packages_received_detail.append("___PACKAGE "+numPackRec+"___\n");
+			packages_received_detail.append("sender IP: "+pack.getEdge().getNodeFrom().getComputer().getIpAddress()+"\n");
+			packages_received_detail.append("size: "+pack.getSize()+"\n");
+			packages_received_detail.append("time sent: "+pack.getTimeStartSending()+"\n");
+			packages_received_detail.append("time received: "+pack.getReceivedTime()+"\n");
+			packages_received_detail.append("________________\n");
+			numPackRec++;
+		}
+		int numPackSent = 0;
+		Set<Package> sent = comp.getSentPackages();
+		for (Package pack: sent) {
+			packages_sent_detail.append("___PACKAGE "+numPackSent+"___\n");
+			packages_sent_detail.append("receiver IP: "+pack.getEdge().getNodeTo().getComputer().getIpAddress()+"\n");
+			packages_sent_detail.append("size: "+pack.getSize()+"\n");
+			packages_sent_detail.append("time sent: "+pack.getTimeStartSending()+"\n");
+			packages_sent_detail.append("time received: "+pack.getReceivedTime()+"\n");
+			packages_sent_detail.append("________________\n");
+			numPackSent++;
+		}
+		
 	}
 	
 	public void detailPanelVisible(boolean value) { detailsPanel.setVisible(value);}
+	public void historyPanelVisible(boolean value) { historyPanel.setVisible(value);}
 	
 	public JTextArea getTerminal() {
 		return terminal;

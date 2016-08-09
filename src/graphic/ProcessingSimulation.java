@@ -166,7 +166,7 @@ public class ProcessingSimulation extends PApplet{
 				if (infected < numOfSlaves && virus != null && virus.packageReceived() == true) {
 					Node n = e.getNodeTo();
 					n.setInfected(true);
-					
+					n.processPackage(virus);
 					drawNetworkBegging();
 					
 					e.deleteVirusPackage();
@@ -456,13 +456,15 @@ public class ProcessingSimulation extends PApplet{
 		Node targetNode = new Node(targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		network.addNode(targetNode);
 		
-		if ( numOfSlaves > 60) 							makeNetworkForManyReflected(masterNode, targetNode);
+		
+		if ( numOfSlaves > 40) 							makeNetworkForManyReflected(masterNode, targetNode);
 		else if (numOfSlaves <= 60 && numOfSlaves > 50) { makeNetworkIn_n_lines(masterNode, targetNode, 6); numLines = 6; }
 		else if (numOfSlaves <= 50 && numOfSlaves > 40) { makeNetworkIn_n_lines(masterNode, targetNode, 5); numLines = 5; }
 		else if (numOfSlaves <= 40 && numOfSlaves > 30) { makeNetworkIn_n_lines(masterNode, targetNode, 4); numLines = 4; }
 		else if (numOfSlaves <= 30 && numOfSlaves > 20) { makeNetworkIn_n_lines(masterNode, targetNode, 3); numLines = 3; }
 		else if (numOfSlaves <= 20 && numOfSlaves > 10) { makeNetworkIn_n_lines(masterNode, targetNode, 2); numLines = 2; }
 		else if (numOfSlaves <= 10) 					{ makeNetworkIn_n_lines(masterNode, targetNode, 1); numLines = 1; }
+		
 		
 	}
 		
@@ -486,6 +488,7 @@ public class ProcessingSimulation extends PApplet{
 			masterNode.addNeighbor(nodeMasterSlave);
 			nodeMasterSlave.addNeighbor(masterNode);
 			network.addNode(nodeMasterSlave);
+			network.addMasterSlaveNode(nodeMasterSlave);
 			
 			Node nodeSlave = new Node( PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+120);
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
@@ -500,42 +503,49 @@ public class ProcessingSimulation extends PApplet{
 			nodeSlave.addNeighbor(nodeMasterSlave);
 			nodeMasterSlave.addNeighbor(nodeSlave);
 			network.addNode(nodeSlave);
+			network.addSlaveNode(nodeSlave);
 			
 			Edge edgeMSS2 = new Edge(network, nodeMasterSlave, nodeSlave2);
 			network.addEdge(edgeMSS2);
 			nodeSlave2.addNeighbor(nodeMasterSlave);
 			nodeMasterSlave.addNeighbor(nodeSlave2);
-			network.addNode(nodeSlave2);						
+			network.addNode(nodeSlave2);				
+			network.addSlaveNode(nodeSlave2);
 			
 			Node nodeReflector1 = new Node( PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+300);
 			Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING, 2048);
 			nodeReflector1.setComputer(newReflector1);
+			network.addNode(nodeReflector1);
+			network.addReflectorNode(nodeReflector1);
 			
 			Node nodeReflector2 = new Node( PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+300);
 			Computer newReflector2 = new Computer("216.58.214."+nodeReflector2.getID(),"slave"+nodeReflector2.getID(), Computer.REFLECTING, 2048);
 			nodeReflector2.setComputer(newReflector2);
+			network.addNode(nodeReflector2);
+			network.addReflectorNode(nodeReflector2);
+						
+		}	
+		Set<Node> reflectors = network.getReflectorNodes();
+		Set<Node> slaves = network.getSlaveNodes();
+		
+		for(Node nodeReflector1: reflectors) {
 			
-			Edge edgeSR1 = new Edge(network, nodeReflector1, nodeSlave);
+			for(Node nodeSlave: slaves) {
+				
+				Edge edgeSR1 = new Edge(network, nodeReflector1, nodeSlave);
+				network.addEdge(edgeSR1);
+				nodeSlave.addNeighbor(nodeReflector1);
+				nodeReflector1.addNeighbor(nodeSlave);
+				
+			}
+			
 			Edge edgeRT1 = new Edge(network, nodeReflector1, targetNode);
-			network.addEdge(edgeSR1);
 			network.addEdge(edgeRT1);
-			nodeSlave.addNeighbor(nodeReflector1);
-			nodeReflector1.addNeighbor(nodeSlave);
 			targetNode.addNeighbor(nodeReflector1);
 			nodeReflector1.addNeighbor(targetNode);
-			network.addNode(nodeReflector1);
-			
-			Edge edgeSR2 = new Edge(network, nodeReflector2, nodeSlave2);
-			Edge edgeRT2 = new Edge(network, nodeReflector2, targetNode);
-			network.addEdge(edgeSR2);
-			network.addEdge(edgeRT2);
-			nodeSlave2.addNeighbor(nodeReflector2);
-			nodeReflector2.addNeighbor(nodeSlave2);
-			targetNode.addNeighbor(nodeReflector2);
-			nodeReflector2.addNeighbor(targetNode);
-			network.addNode(nodeReflector2);
-			
-		}	
+		}
+		
+		
 	}
 	
 	public void makeNetworkForMany(Node masterNode, Node targetNode) {
@@ -592,7 +602,7 @@ public class ProcessingSimulation extends PApplet{
 	
 	public void checkClickedComputer(int cordmouseX, int cordmouseY) {
 		GUIcontrol.detailPanelVisible(false);
-		
+		GUIcontrol.historyPanelVisible(false);
 		//check all nodes, and for any node if mouse cords are in PIXEL_RANGE_NODE 
 		Set<Node> allNodes = network.getAllNodes();
 		for(Node node: allNodes) {
@@ -600,6 +610,7 @@ public class ProcessingSimulation extends PApplet{
 				//clicked on computer -> show details
 				GUIcontrol.showComputerDetails(node.getComputer(), node.getID());
 				GUIcontrol.detailPanelVisible(true);
+				GUIcontrol.historyPanelVisible(true);
 			}
 		}
 	}
