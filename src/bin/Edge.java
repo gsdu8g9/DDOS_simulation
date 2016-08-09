@@ -25,7 +25,6 @@ public class Edge {
 		pack.setX(nodeFrom.getX());
 		pack.setY(nodeFrom.getY());
 		packages.add(pack);
-		network.incrementNumPackages();
 		if (pack.getType() == Package.EMAIL_VIRUS) virusPackage = pack;
 	}
 	

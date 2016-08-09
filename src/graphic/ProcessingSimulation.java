@@ -4,10 +4,8 @@ import bin.*;
 import java.util.Random;
 import bin.Package;
 import processing.core.*;
-
 import java.awt.Color;
 import java.util.*;
-
 import javax.swing.JTextArea;
 
 public class ProcessingSimulation extends PApplet{
@@ -16,11 +14,14 @@ public class ProcessingSimulation extends PApplet{
 							 MATRIX_RANGE_6 = 75, MATRIX_RANGE_5 = 100, MATRIX_RANGE_4 = 125, MATRIX_RANGE_3 = 150, MATRIX_RANGE_2 = 175, MATRIX_RANGE_1 = 200,
 							 NODES_PER_LINE = 10, PIXEL_START_TOP = 50;
 	
-	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4;
+	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4,
+							STAGE_GEN = 5, STAGE_FINISHED = 6;
 	
 	public static final int TIMER_ACK_PROCESSING = 2;
 	
-	private int numOfSlaves, ddosType, infected = 0, currentNumPackages = 0;
+	public static int speedUp = 1;
+	
+	private int infected = 0;
 	private long lastPackageWave = 0;
 	private Network network;
 	private DDoSSimulation GUIcontrol;
@@ -30,22 +31,10 @@ public class ProcessingSimulation extends PApplet{
 	private float angleTargetMemory = 0;
 	private Node mostLeftDown, mostRightDown;
 	private int numLines;
-	private Set<LineCoords> ackLinesToDelete = new HashSet<LineCoords>();
 	private List<Package> packageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
 	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
 	
-	private class LineCoords {
-		public float xFrom, yFrom, xTo, yTo;
-		
-		public LineCoords(float x1, float y1, float x2, float y2) {
-			xFrom = x1;
-			yFrom = y1;
-			xTo = x2;
-			yTo = y2;
-		}
-	}
-
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
 	}
@@ -83,17 +72,18 @@ public class ProcessingSimulation extends PApplet{
 		fill(0);
 		text("ATTACKER", network.getMasterNode().getX()-35, network.getMasterNode().getY()-40);
 		
-		//---------------------------------------HARDCODED
-		//------------should appear only when numOfSLaves > 60
-		//textFont(font);
-		//fill(0,0,100);
-		//text("MASTER ZOMBIES", 950+PIXEL_START_LEFT, 120+PIXEL_START_TOP);
-		
-		//textFont(font);
-		//fill(0,0,100);
-		//text("SLAVE ZOMBIES", 950+PIXEL_START_LEFT, 120+5*PIXEL_START_TOP);
-		//--------------REFLECTING
 		/*
+		---------------------------------------HARDCODED
+		------------should appear only when DDoSSimulation.globalNumSlaves > 60
+		textFont(font);
+		fill(0,0,100);
+		text("MASTER ZOMBIES", 950+PIXEL_START_LEFT, 120+PIXEL_START_TOP);
+		
+		textFont(font);
+		fill(0,0,100);
+		text("SLAVE ZOMBIES", 950+PIXEL_START_LEFT, 120+5*PIXEL_START_TOP);
+		--------------REFLECTING
+		
 		textFont(font);
 		fill(0,0,100);
 		text("MASTER ZOMBIES", 950+PIXEL_START_LEFT, 90+PIXEL_START_TOP);
@@ -106,14 +96,13 @@ public class ProcessingSimulation extends PApplet{
 		fill(0,0,100);
 		text("REFLECTORS", 950+PIXEL_START_LEFT, 90+8*PIXEL_START_TOP);
 		
-		//--------------------------------------	
+		--------------------------------------	
 		*/
-		
-				  
+			  
 		stroke(0);
 		fill(175);
 		ellipse(network.getTargetNode().getX(), network.getTargetNode().getY(), 16, 16);
-				  
+			  
 		//draw edges
 		Set<Edge> allEdges = network.getAllEdges();
 		for(Edge e: allEdges) {
@@ -139,13 +128,13 @@ public class ProcessingSimulation extends PApplet{
 					stroke(0);
 					fill(ntype == Computer.MASTER_SLAVE? 100: 255,0 ,0);
 					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
-					if (numOfSlaves<=60) image(imgInfected, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+					if (DDoSSimulation.globalNumSlaves<=60) image(imgInfected, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 				}
 				else {
 					stroke(0);
 					fill(0, ntype == Computer.MASTER_SLAVE? 100: 255 ,0);
 					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
-					if (numOfSlaves<=60) image(imgClear, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+					if (DDoSSimulation.globalNumSlaves<=60) image(imgClear, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 				}
 					
 				textFont(font);
@@ -156,7 +145,6 @@ public class ProcessingSimulation extends PApplet{
 	}
 
 	private void update() {
-		currentNumPackages = network.getNumPackages();
 		angleTargetMemory = (network.getTagetLeftPercent())*360;
 		
 		refreshPackageQueue();
@@ -167,7 +155,7 @@ public class ProcessingSimulation extends PApplet{
 			
 			for (Edge e: allEdges) {
 				Package virus = e.getVirusPackage();
-				if (infected < numOfSlaves && virus != null && virus.packageReceived() == true) {
+				if (infected < DDoSSimulation.globalNumSlaves && virus != null && virus.packageReceived() == true) {
 					Node n = e.getNodeTo();
 					n.setInfected(true);
 					n.processPackage(virus);
@@ -175,6 +163,7 @@ public class ProcessingSimulation extends PApplet{
 					
 					e.deleteVirusPackage();
 					infected++;
+					travellingPackages.remove(virus);
 					
 					saveFrame("data/initalNetwork.png");
 					newImageToLoad = true;
@@ -182,7 +171,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			
 			//wait for all slaves to be infected by virus
-			if (infected == numOfSlaves) {
+			if (infected == DDoSSimulation.globalNumSlaves) {
 				infected = 0;
 				drawNetworkBegging();
 				saveFrame("data/initalNetwork.png");
@@ -192,20 +181,22 @@ public class ProcessingSimulation extends PApplet{
 				
 				stage = ProcessingSimulation.STAGE_IDLE;
 			}
-		} else if (stage == ProcessingSimulation.STAGE_ATTACKING) {
-			generateCYNpackages(ddosType);
+		} else if (stage == ProcessingSimulation.STAGE_GEN) {
+			generateCYNpackages();
+			
+			stage = ProcessingSimulation.STAGE_ATTACKING;
 		}
 	}
 	
-	private void generateCYNpackages(int packageType) {
+	private void generateCYNpackages() {
 		long currSec = System.currentTimeMillis()/1000;
 		
 		if (lastPackageWave == 0) {
 			lastPackageWave = currSec;
-			network.sendFromAllSlaves(packageType);
+			network.sendFromAllSlaves(Package.CYN_PACKAGE);
 		} else if ((currSec - lastPackageWave) >= 4) {  
 			lastPackageWave = currSec;
-			network.sendFromAllSlaves(packageType);
+			network.sendFromAllSlaves(Package.CYN_PACKAGE);
 		}
 	}
 	
@@ -228,9 +219,14 @@ public class ProcessingSimulation extends PApplet{
 		// insert part for pause stage
 		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 		
-		drawAllTravellingPackages();
-		drawAllAckPackages();
+		if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
+			drawAllTravellingPackages();
+			drawAllAckPackages();
+		}
 		drawMemoryInfoCircle(angleTargetMemory);
+		
+		if (network.getTargetNode().getComputer().isMemoryFull())
+			stage = ProcessingSimulation.STAGE_FINISHED;
 	}
 	
 	private void drawMemoryInfoCircle(float angleTargetMemory) {
@@ -308,23 +304,17 @@ public class ProcessingSimulation extends PApplet{
 		}
 		//removing received from list
 		travellingPackages = newTravellingPackages;
-	}
-	
-	private void deletePreviousAckLines() {
-		for (LineCoords coord : ackLinesToDelete) {
-			fill(255);
-			line(coord.xFrom, coord.yFrom, coord.xTo, coord.yTo);
-		}
-		ackLinesToDelete.clear();
+		if (travellingPackages.size() == 0 && stage == ProcessingSimulation.STAGE_ATTACKING)
+			stage = ProcessingSimulation.STAGE_GEN;
 	}
 	
 	private void drawPackage_Helper(Package pack) {
 		float x = pack.getX();
 		float y = pack.getY();
 		
-		float speedUp = 7;
 		
-		if (currentNumPackages/10 > 0) speedUp = speedUp * currentNumPackages/10;
+		
+		//if (travellingPackages.size()/10 > 0) speedUp = speedUp * travellingPackages.size()/10;
 		
 		float speedX = 0;
 		float speedY = 1;
@@ -404,18 +394,18 @@ public class ProcessingSimulation extends PApplet{
 	
 	private void makeNetworkIn_n_lines(Node masterNode, Node targetNode, int n) {
 		// calculate padding between nodes
-		int padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (numOfSlaves/n);
+		int padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/n);
 		int toFill = 0;	
 		boolean lastFilling = false, end = false;
 		
-		if (numOfSlaves % n != 0) toFill = numOfSlaves % n;
+		if (DDoSSimulation.globalNumSlaves % n != 0) toFill = DDoSSimulation.globalNumSlaves % n;
 		
 		for (int j=0; j<n; j++) {
-		for (int i=0; i<numOfSlaves/n + ((toFill>0) ? 1 : 0); i++) {
+		for (int i=0; i<DDoSSimulation.globalNumSlaves/n + ((toFill>0) ? 1 : 0); i++) {
 			Node nodeSlave = null;
 			if (toFill > 0) {
-				padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (numOfSlaves/(n)) - 10;
-				if (i == numOfSlaves/n + ((toFill>0) ? 1 : 0) - 1) {
+				padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/(n)) - 10;
+				if (i == DDoSSimulation.globalNumSlaves/n + ((toFill>0) ? 1 : 0) - 1) {
 					//add to end one more node
 					toFill--;
 					if (toFill == 0) lastFilling = true;
@@ -428,12 +418,12 @@ public class ProcessingSimulation extends PApplet{
 			if (n == 2) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_2*(j+1));
 			if (n == 1) nodeSlave = new Node(network, PIXEL_START_LEFT+padding*(i), PIXEL_START_TOP+MATRIX_RANGE_1*(j+1));
 			
-			if (lastFilling) padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (numOfSlaves/n);
+			if (lastFilling) padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/n);
 			
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
 			
-			if (j == n-1 && i == numOfSlaves/n - 1)
+			if (j == n-1 && i == DDoSSimulation.globalNumSlaves/n - 1)
 				mostRightDown = nodeSlave;
 			
 			if (i == n-1 && i == 0)
@@ -468,13 +458,13 @@ public class ProcessingSimulation extends PApplet{
 		network.addNode(targetNode);
 		
 		
-		if ( numOfSlaves > 40) 							makeNetworkForManyReflected(masterNode, targetNode);
-		else if (numOfSlaves <= 60 && numOfSlaves > 50) { makeNetworkIn_n_lines(masterNode, targetNode, 6); numLines = 6; }
-		else if (numOfSlaves <= 50 && numOfSlaves > 40) { makeNetworkIn_n_lines(masterNode, targetNode, 5); numLines = 5; }
-		else if (numOfSlaves <= 40 && numOfSlaves > 30) { makeNetworkIn_n_lines(masterNode, targetNode, 4); numLines = 4; }
-		else if (numOfSlaves <= 30 && numOfSlaves > 20) { makeNetworkIn_n_lines(masterNode, targetNode, 3); numLines = 3; }
-		else if (numOfSlaves <= 20 && numOfSlaves > 10) { makeNetworkIn_n_lines(masterNode, targetNode, 2); numLines = 2; }
-		else if (numOfSlaves <= 10) 					{ makeNetworkIn_n_lines(masterNode, targetNode, 1); numLines = 1; }
+		if ( DDoSSimulation.globalNumSlaves > 40) 							makeNetworkForManyReflected(masterNode, targetNode);
+		else if (DDoSSimulation.globalNumSlaves <= 60 && DDoSSimulation.globalNumSlaves > 50) { makeNetworkIn_n_lines(masterNode, targetNode, 6); numLines = 6; }
+		else if (DDoSSimulation.globalNumSlaves <= 50 && DDoSSimulation.globalNumSlaves > 40) { makeNetworkIn_n_lines(masterNode, targetNode, 5); numLines = 5; }
+		else if (DDoSSimulation.globalNumSlaves <= 40 && DDoSSimulation.globalNumSlaves > 30) { makeNetworkIn_n_lines(masterNode, targetNode, 4); numLines = 4; }
+		else if (DDoSSimulation.globalNumSlaves <= 30 && DDoSSimulation.globalNumSlaves > 20) { makeNetworkIn_n_lines(masterNode, targetNode, 3); numLines = 3; }
+		else if (DDoSSimulation.globalNumSlaves <= 20 && DDoSSimulation.globalNumSlaves > 10) { makeNetworkIn_n_lines(masterNode, targetNode, 2); numLines = 2; }
+		else if (DDoSSimulation.globalNumSlaves <= 10) 					{ makeNetworkIn_n_lines(masterNode, targetNode, 1); numLines = 1; }
 		
 		
 	}
@@ -483,7 +473,7 @@ public class ProcessingSimulation extends PApplet{
 		int Y = 40;
 		int X = 100;
 		
-		for (int i=0; i<numOfSlaves/5; i++) {
+		for (int i=0; i<DDoSSimulation.globalNumSlaves/5; i++) {
 			
 			//Random rand = new Random(i);
 			int randomX = i%10 * X;
@@ -563,7 +553,7 @@ public class ProcessingSimulation extends PApplet{
 		int Y = 60;
 		int X = 100;
 		
-		for (int i=0; i<numOfSlaves/3; i++) {
+		for (int i=0; i<DDoSSimulation.globalNumSlaves/3; i++) {
 			
 			//Random rand = new Random(i);
 			int randomX = i%10 * X;
@@ -617,23 +607,23 @@ public class ProcessingSimulation extends PApplet{
 		//check all nodes, and for any node if mouse cords are in PIXEL_RANGE_NODE 
 		Set<Node> allNodes = network.getAllNodes();
 		for(Node node: allNodes) {
-			if ((cordmouseX >= node.getX()) && (cordmouseX <= (node.getX() + PIXEL_RANGE_NODE))) {
+			if ((cordmouseX >= node.getX() - PIXEL_RANGE_NODE) && (cordmouseX <= (node.getX() + PIXEL_RANGE_NODE)) &&
+				(cordmouseY >= node.getY() - PIXEL_RANGE_NODE) && (cordmouseY <= (node.getY() + PIXEL_RANGE_NODE))) {
 				//clicked on computer -> show details
 				GUIcontrol.showComputerDetails(node.getComputer(), node.getID());
 				GUIcontrol.detailPanelVisible(true);
 				GUIcontrol.historyPanelVisible(true);
+				
+				if (node.getID() == 7) speedUp = 7;
+				if (node.getID() == 3) speedUp = 3; 
+				if (node.getID() == 10) speedUp = 20; 
 			}
 		}
 	}
 
-	public void startDDos(int ddosType) {
-		stage = ProcessingSimulation.STAGE_ATTACKING;
-		this.ddosType = ddosType;
-	}
+	public void startDDos() { stage = ProcessingSimulation.STAGE_GEN; }
 	
 	public JTextArea getTerminal() { return GUIcontrol.getTerminal(); }
-	
-	public void setNumOfSlaves(int num) { numOfSlaves = num; } 
 	
 	public int getStage() { return stage; }
 }

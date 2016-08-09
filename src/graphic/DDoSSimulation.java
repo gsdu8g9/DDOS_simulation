@@ -21,28 +21,31 @@ public class DDoSSimulation {
 	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
 							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 300;
 	
+	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
+	
+	public static boolean globalResourceType = true, globalDDOSType = true, globalPackageType = true, globalGraphType = true;
+	public static int globalNumSlaves = 15, globalNumMasterSlaves;
+	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
 	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
-	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF; 
+	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF, numMastersTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal, packages_received_detail, packages_sent_detail;
 	
-	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	private int packageType = 1, lastInputTerminal = 1;
 	
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
-	private int numSlavesConf = 0, ttlConf = 4, memoryConf = 0, packageConf = 32;
+	private int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	public DDoSSimulation() {
 		//makePopUpStart();
-		makeWindow(true,true,true,true);
+		makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.setNumOfSlaves(20);
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}
@@ -113,17 +116,17 @@ public class DDoSSimulation {
 		
 		confirm.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				boolean r_internal = internalResources.isSelected();
-				boolean y_direct = direct.isSelected();
-				boolean p_cyn = cyn.isSelected();
-				boolean n_slaves = under60.isSelected();
+				globalResourceType = internalResources.isSelected();
+				globalDDOSType = direct.isSelected();
+				globalPackageType = cyn.isSelected();
+				globalGraphType = under60.isSelected();
 				
-				makeWindow(r_internal, y_direct, p_cyn, n_slaves);
+				makeWindow();
 			}
 		});
 	}
 	
-	private void makeWindow(boolean internalResouces, boolean typeDirect, boolean packageCYN, boolean under60) {
+	private void makeWindow() {
 		//popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
@@ -144,15 +147,17 @@ public class DDoSSimulation {
 		configurePanel = new JPanel(new BorderLayout());
 		
 		// configure tab -------------------------------------------------------------------------------
-		JPanel cSlavesConfig = new JPanel(new GridLayout(5,3,3,3));
+		JPanel cSlavesConfig = new JPanel(new GridLayout(6,3,3,3));
 		cSlavesConfig.setBorder(BorderFactory.createTitledBorder("Slaves configuration"));
 		
 		numSlavesTF = new JTextField(15);		JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);
 		ttlTF = new JTextField(15);				JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
-												JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
-												
+		numMastersTF = new JTextField(15);		JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
+												JTextField dummy12 = new JTextField(10);	dummy12.setVisible(false);
+		
+		cSlavesConfig.add(new JLabel("Number of masters:"));	cSlavesConfig.add(numMastersTF); 	cSlavesConfig.add(dummy12);										
 		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
 		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
 		cSlavesConfig.add(new JLabel("Memory in time:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
@@ -254,7 +259,7 @@ public class DDoSSimulation {
 		        	} 
 		        	else if (command.equals("start ddos")) { //----------------------------------------------------------
 		        		if (procGraphic.getStage() == ProcessingSimulation.STAGE_IDLE)
-		        			procGraphic.startDDos(packageType);
+		        			procGraphic.startDDos();
 		        		else {
 		        			terminal.append("\n>Infect slaves first... \n>");
 		        			updateLastInputTerminal();
@@ -284,7 +289,8 @@ public class DDoSSimulation {
 							//-> 1. default way | 2. from document	| 3. typing
 		submitConfiguration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				numSlavesConf = Integer.parseInt(numSlavesTF.getText());
+				globalNumMasterSlaves = Integer.parseInt(numMastersTF.getText());
+				globalNumSlaves = Integer.parseInt(numSlavesTF.getText());
 				ttlConf = Integer.parseInt(ttlTF.getText());
 				memoryConf = Integer.parseInt(memoryTF.getText());
 				packageConf = Integer.parseInt(packagesizeTF.getText());
@@ -295,13 +301,13 @@ public class DDoSSimulation {
 				packagesizeTF.setEditable(false);
 				
 				submitConfiguration.setEnabled(false);
-				makeIPAddressConfigWindow(numSlavesConf);
+				makeIPAddressConfigWindow();
 			}
 		});
 		
 	}
 	
-	public void makeIPAddressConfigWindow(int numSlaves) {
+	public void makeIPAddressConfigWindow() {
 		ipAddressConfig = new JFrame();
 		ipAddressConfig.setSize(WINDOW_WIDTH, WINDOW_HEIGHT/4);
 		ipMainPanel = new JPanel(new BorderLayout());
@@ -353,8 +359,8 @@ public class DDoSSimulation {
 				r_file.setEnabled(false);
 				
 				filePanel.setBorder(BorderFactory.createTitledBorder("Type in ip addresses"));
-				filePanel.setLayout(new GridLayout(numSlavesConf/2,2,5,5));
-				for (int i=0; i < numSlavesConf; i++) {
+				filePanel.setLayout(new GridLayout(globalNumSlaves/2,2,5,5));
+				for (int i=0; i < globalNumSlaves; i++) {
 					JTextField ipInput = new JTextField(20);
 					ipInputs.add(ipInput);
 					filePanel.add(ipInput);
@@ -384,8 +390,7 @@ public class DDoSSimulation {
 		});
 	}
 	
-	private void configureNetworkByDefault() {  
-		procGraphic.setNumOfSlaves(numSlavesConf);
+	private void configureNetworkByDefault() {
 		procGraphic.makeNetworkDefault();
 		runSimulation();
 	}

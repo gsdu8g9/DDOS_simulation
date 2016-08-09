@@ -58,6 +58,10 @@ public class Computer {
 		else if (currSize > 0 && (currSize - size <= 0) ) currSize = 0;
 	}
 	
+	public boolean isMemoryFull() {
+		return currSize == maxSize;
+	}
+	
 	public Set<Package> getReceivedPackages() { return receivedPackages; }
 	
 	public void addReceivedPackage(Package pack) { receivedPackages.add(pack); }
