@@ -5,8 +5,8 @@ import java.util.*;
 import javax.swing.JTextArea;
 
 public class Edge {
-	private Node nodeFrom;
-	private Node nodeTo;
+	private Node nodeFrom, nodeTo;
+	private String returnIPaddress = "";
 	private Network network;
 	private Set<Package> packages;
 	private Package virusPackage = null;
@@ -31,6 +31,9 @@ public class Edge {
 	
 	public Set<Package> getPackages() { return packages; }
 	public Package getVirusPackage() { return virusPackage; }
+	
+	public String getReturnIPAddress() { return returnIPaddress; }
+	public void setReturnIPAddress(String ipAddress) { returnIPaddress = ipAddress; }
 	
 	public void deleteVirusPackage() { 
 		virusPackage = null; 
