@@ -23,14 +23,14 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceType = true, globalDDOSType = true, globalPackageType = true, globalGraphType = true;
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = true;
 	public static int globalNumSlaves = 15, globalNumMasterSlaves;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
-	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel;
+	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel, computerDetailsPanel, userHelpPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF, numMastersTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
@@ -43,11 +43,11 @@ public class DDoSSimulation {
 	private int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	public DDoSSimulation() {
-		//makePopUpStart();
-		makeWindow();
+		makePopUpStart();
+		//makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.makeNetworkDefault();
-		runSimulation();
+		//procGraphic.makeNetworkDefault();
+		//runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -116,10 +116,10 @@ public class DDoSSimulation {
 		
 		confirm.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				globalResourceType = internalResources.isSelected();
-				globalDDOSType = direct.isSelected();
-				globalPackageType = cyn.isSelected();
-				globalGraphType = under60.isSelected();
+				globalResourceTypeInternal = internalResources.isSelected();
+				globalDDOSTypeDirect = direct.isSelected();
+				globalPackageTypeCYN = cyn.isSelected();
+				globalGraphTypeU60 = under60.isSelected();
 				
 				makeWindow();
 			}
@@ -127,7 +127,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		//popUpStart.setVisible(false);
+		popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -145,6 +145,8 @@ public class DDoSSimulation {
 		JTabbedPane tabs = new JTabbedPane();
 		terminalPanel = new JPanel();
 		configurePanel = new JPanel(new BorderLayout());
+		computerDetailsPanel = new JPanel(new BorderLayout());
+		userHelpPanel = new JPanel(new BorderLayout());
 		
 		// configure tab -------------------------------------------------------------------------------
 		JPanel cSlavesConfig = new JPanel(new GridLayout(6,3,3,3));
@@ -167,7 +169,25 @@ public class DDoSSimulation {
 		cSlavesConfig.add(dummy11);
 		cSlavesConfig.add(submitConfiguration);
 		
+		
+		//********************************88
+		JPanel cAttackOptions = new JPanel(new GridLayout(3,1,3,3));
+		cAttackOptions.setBorder(BorderFactory.createTitledBorder("DDOS Attack options"));
+		
+		JButton startInfectingMasters = new JButton("Start infecting master zombies");
+		cAttackOptions.add(startInfectingMasters);
+		
+		JButton startDDoS = new JButton("Start DDOS attack");
+		startDDoS.setEnabled(false);
+		cAttackOptions.add(startDDoS);
+		
+		JButton pausePlay = new JButton("Pause/Play simulation");
+		pausePlay.setEnabled(false);
+		cAttackOptions.add(pausePlay);
+		//**************************************88
+		
 		configurePanel.add(cSlavesConfig, BorderLayout.NORTH);
+		configurePanel.add(cAttackOptions, BorderLayout.CENTER);
 		
 		// details panel -------------------------------------------------------------------------------
 		detailsPanel = new JPanel(new GridLayout(6, 3, 3, 3));
@@ -202,7 +222,7 @@ public class DDoSSimulation {
 		detailsPanel.add(Memory);		detailsPanel.add(memory_detail);		detailsPanel.add(dummy5);
 		detailsPanel.add(TTL);			detailsPanel.add(ttl_detail);			detailsPanel.add(dummy6);
 		
-		configurePanel.add(detailsPanel, BorderLayout.CENTER);
+		computerDetailsPanel.add(detailsPanel, BorderLayout.NORTH);
 		detailsPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		//history panel --------------------------------------------------------------------------------
 		
@@ -229,7 +249,7 @@ public class DDoSSimulation {
 		//historyPanel.add(sent);
 		historyPanel.add(sp_packSent);
 		
-		configurePanel.add(historyPanel, BorderLayout.SOUTH);
+		computerDetailsPanel.add(historyPanel, BorderLayout.CENTER);
 		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		// terminal tab --------------------------------------------------------------------------------
 		
@@ -280,8 +300,15 @@ public class DDoSSimulation {
 		
 		terminalPanel.add(sp);
 		
+		// USER HELP TAB------------------------------------------------------------------------------------------
+		
+		
+		//---------------------------------------------------------------------------------------------------------
+		
 		tabs.addTab("Configure", configurePanel);
 		tabs.addTab("Terminal", terminalPanel);
+		tabs.addTab("Computer details", computerDetailsPanel);
+		tabs.addTab("User help", userHelpPanel);
 		window.add(tabs);
 		
 		// 'Configure' button -> locks textfields (for new parameters new simulation must be started)
@@ -295,6 +322,7 @@ public class DDoSSimulation {
 				memoryConf = Integer.parseInt(memoryTF.getText());
 				packageConf = Integer.parseInt(packagesizeTF.getText());
 				
+				numMastersTF.setEditable(false);
 				numSlavesTF.setEditable(false);
 				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
@@ -302,6 +330,36 @@ public class DDoSSimulation {
 				
 				submitConfiguration.setEnabled(false);
 				makeIPAddressConfigWindow();
+			}
+		});
+		
+		startInfectingMasters.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				procGraphic.infectSlaves();
+				startInfectingMasters.setEnabled(false);
+				startDDoS.setEnabled(true);
+				pausePlay.setEnabled(true);
+			}
+		});
+		
+		startDDoS.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				procGraphic.startDDos();
+				startDDoS.setEnabled(false);
+				pausePlay.setEnabled(true);
+			}
+		});
+		
+		pausePlay.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (procGraphic.getStage() == ProcessingSimulation.STAGE_PAUSE) { //continue
+					procGraphic.continueSimulation();
+				}
+				else { //pause
+					procGraphic.pauseSimulation();
+				}
 			}
 		});
 		

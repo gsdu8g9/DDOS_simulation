@@ -15,11 +15,13 @@ public class ProcessingSimulation extends PApplet{
 							 NODES_PER_LINE = 10, PIXEL_START_TOP = 50;
 	
 	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4,
-							STAGE_GEN = 5, STAGE_FINISHED = 6;
+							STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
 	
 	public static final int TIMER_ACK_PROCESSING = 2;
 	
 	public static int speedUp = 1;
+	
+	public static int stageBeforePause = 2;
 	
 	private int infected = 0;
 	private long lastPackageWave = 0;
@@ -201,32 +203,34 @@ public class ProcessingSimulation extends PApplet{
 	}
 	
 	public void draw() {
-		update();
-		
-		if (newImageToLoad == true) {
-			networkBackground = loadImage("initalNetwork.png");
-			newImageToLoad = false;
-		}
-		
-		if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
-			if (firstImageLoad == false) {
+		if (!isPaused()) {
+			update();
+			
+			if (newImageToLoad == true) {
 				networkBackground = loadImage("initalNetwork.png");
-				firstImageLoad = true;
+				newImageToLoad = false;
 			}
-			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
+			
+			if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
+				if (firstImageLoad == false) {
+					networkBackground = loadImage("initalNetwork.png");
+					firstImageLoad = true;
+				}
+				image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
+			}
+			
+			// insert part for pause stage
+			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
+			
+			if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
+				drawAllTravellingPackages();
+				drawAllAckPackages();
+			}
+			drawMemoryInfoCircle(angleTargetMemory);
+			
+			if (network.getTargetNode().getComputer().isMemoryFull())
+				stage = ProcessingSimulation.STAGE_FINISHED;
 		}
-		
-		// insert part for pause stage
-		if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
-		
-		if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
-			drawAllTravellingPackages();
-			drawAllAckPackages();
-		}
-		drawMemoryInfoCircle(angleTargetMemory);
-		
-		if (network.getTargetNode().getComputer().isMemoryFull())
-			stage = ProcessingSimulation.STAGE_FINISHED;
 	}
 	
 	private void drawMemoryInfoCircle(float angleTargetMemory) {
@@ -457,6 +461,37 @@ public class ProcessingSimulation extends PApplet{
 		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		network.addNode(targetNode);
 		
+		if (DDoSSimulation.globalResourceTypeInternal) {
+			if (DDoSSimulation.globalDDOSTypeDirect) {
+				if (DDoSSimulation.globalGraphTypeU60) { //internal,direct, u60
+					
+				} else { // internal, direct, a60
+					
+				}
+			} else { 
+				if (DDoSSimulation.globalGraphTypeU60) { //internal,reflected, u60
+					
+				} else { // internal, reflected, a60
+					
+				}
+			}
+			
+		} else {  // network
+			if (DDoSSimulation.globalDDOSTypeDirect) {
+				if (DDoSSimulation.globalGraphTypeU60) { //network,direct, u60
+					
+				} else { // network, direct, a60
+					
+				}
+			} else { 
+				if (DDoSSimulation.globalGraphTypeU60) { //network,reflected, u60
+					
+				} else { // network, reflected, a60
+					
+				}
+			}
+		}
+		
 		
 		if ( DDoSSimulation.globalNumSlaves > 40) 							makeNetworkForManyReflected(masterNode, targetNode);
 		else if (DDoSSimulation.globalNumSlaves <= 60 && DDoSSimulation.globalNumSlaves > 50) { makeNetworkIn_n_lines(masterNode, targetNode, 6); numLines = 6; }
@@ -626,4 +661,15 @@ public class ProcessingSimulation extends PApplet{
 	public JTextArea getTerminal() { return GUIcontrol.getTerminal(); }
 	
 	public int getStage() { return stage; }
+	
+	public void continueSimulation() {
+		stage = stageBeforePause;
+	}
+	
+	public void pauseSimulation () {
+		stageBeforePause = stage;
+		stage = STAGE_PAUSE;
+	}
+	
+	public boolean isPaused() { return stage == STAGE_PAUSE; }
 }
