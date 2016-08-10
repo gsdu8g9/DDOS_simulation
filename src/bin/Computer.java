@@ -16,6 +16,7 @@ public class Computer {
 	private Set<Package> sentPackages = new HashSet<Package>();
 	
 	
+	
 	public Computer(String ipAddress, String domain, int type, int memSize) {
 		this.ipAddress = ipAddress;
 		this.domain = domain;

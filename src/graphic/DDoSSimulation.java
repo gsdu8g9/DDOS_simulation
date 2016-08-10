@@ -24,7 +24,7 @@ public class DDoSSimulation {
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
 	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = true;
-	public static int globalNumSlaves = 15, globalNumMasterSlaves;
+	public static int globalNumSlaves = 150, globalNumMasterSlaves;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
@@ -43,11 +43,11 @@ public class DDoSSimulation {
 	private int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	public DDoSSimulation() {
-		makePopUpStart();
-		//makeWindow();
+		//makePopUpStart();
+		makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		//procGraphic.makeNetworkDefault();
-		//runSimulation();
+		procGraphic.makeNetworkDefault();
+		runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -127,7 +127,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		popUpStart.setVisible(false);
+		//popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 

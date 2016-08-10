@@ -1,5 +1,6 @@
 package bin;
 
+import java.awt.Color;
 import java.util.*;
 
 public class Node {
@@ -7,8 +8,10 @@ public class Node {
 	private Network network;
 	private int cordX, cordY, id;
 	private Set<Node> neighbors = new HashSet<Node> ();
+	private Set<Node> mySlaves = new HashSet<>();
 	private Computer computer;
 	private boolean infected = false;
+	private Color color = new Color(0,0,0);
 	
 	public Node(Network net, Computer comp, int x, int y){
 		network = net;
@@ -38,9 +41,17 @@ public class Node {
 	
 	public void addNeighbor(Node n) { neighbors.add(n); }
 	
+	public void addSlave(Node n) {mySlaves.add(n); }
+	
+	public Set<Node> getMySlaves() {return mySlaves; }
+	
 	public int getX() { return cordX; }
 	
 	public int getY() { return cordY; }
+	
+	public void setColor (Color color) {this.color=color;}
+	
+	public Color getColor () {return color;}
 	
 	public Node processPackage(Package pack) {
 		//check if there is return IP in network, and return ACK to it

@@ -108,8 +108,10 @@ public class ProcessingSimulation extends PApplet{
 		//draw edges
 		Set<Edge> allEdges = network.getAllEdges();
 		for(Edge e: allEdges) {
-			stroke(0);
-			fill(0,127);
+			stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
+			//fill(255,0,0);
+			
+			//fill(e.getNodeFrom().getR(), e.getNodeFrom().getG(), e.getNodeFrom().getB());
 			line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		}
 		
@@ -134,7 +136,8 @@ public class ProcessingSimulation extends PApplet{
 				}
 				else {
 					stroke(0);
-					fill(0, ntype == Computer.MASTER_SLAVE? 100: 255 ,0);
+					//fill(0, ntype == Computer.MASTER_SLAVE? 100: 255 ,0);
+					fill(n.getColor().getRed(), n.getColor().getGreen(), n.getColor().getBlue());
 					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
 					if (DDoSSimulation.globalNumSlaves<=60) image(imgClear, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 				}
@@ -461,14 +464,14 @@ public class ProcessingSimulation extends PApplet{
 		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		network.addNode(targetNode);
 		
-		if (DDoSSimulation.globalResourceTypeInternal) {
+		
 			if (DDoSSimulation.globalDDOSTypeDirect) {
 				if (DDoSSimulation.globalGraphTypeU60) { //internal,direct, u60
 					
 				} else { // internal, direct, a60
 					
 				}
-			} else { 
+			} else { //reflected
 				if (DDoSSimulation.globalGraphTypeU60) { //internal,reflected, u60
 					
 				} else { // internal, reflected, a60
@@ -476,21 +479,7 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 			
-		} else {  // network
-			if (DDoSSimulation.globalDDOSTypeDirect) {
-				if (DDoSSimulation.globalGraphTypeU60) { //network,direct, u60
-					
-				} else { // network, direct, a60
-					
-				}
-			} else { 
-				if (DDoSSimulation.globalGraphTypeU60) { //network,reflected, u60
-					
-				} else { // network, reflected, a60
-					
-				}
-			}
-		}
+		
 		
 		
 		if ( DDoSSimulation.globalNumSlaves > 40) 							makeNetworkForManyReflected(masterNode, targetNode);
@@ -510,13 +499,16 @@ public class ProcessingSimulation extends PApplet{
 		
 		for (int i=0; i<DDoSSimulation.globalNumSlaves/5; i++) {
 			
-			//Random rand = new Random(i);
+			Random rand = new Random();
 			int randomX = i%10 * X;
 			int randomY = i/10 * Y;
 			Node nodeMasterSlave = new Node(network, PIXEL_START_LEFT+randomX, 2*PIXEL_START_TOP+randomY);
-					
+			
+			nodeMasterSlave.setColor(new Color(rand.nextInt(254),rand.nextInt(254), rand.nextInt(254)));
+						
 			Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, 2048);
 			nodeMasterSlave.setComputer(newMasterSlave);
+			masterNode.addSlave(nodeMasterSlave);
 					
 			//add edges: master-masterSlave
 			Edge edge1 = new Edge(network, masterNode, nodeMasterSlave);
@@ -526,13 +518,18 @@ public class ProcessingSimulation extends PApplet{
 			network.addNode(nodeMasterSlave);
 			network.addMasterSlaveNode(nodeMasterSlave);
 			
+			
 			Node nodeSlave = new Node(network, PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+120);
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
+			nodeMasterSlave.addSlave(nodeSlave);
+			nodeSlave.setColor(nodeMasterSlave.getColor());
 			
 			Node nodeSlave2 = new Node(network, PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+120);
 			Computer newSlave2 = new Computer("216.58.214."+nodeSlave2.getID(),"slave"+nodeSlave2.getID(), Computer.SLAVE, 2048);
 			nodeSlave2.setComputer(newSlave2);
+			nodeMasterSlave.addSlave(nodeSlave2);
+			nodeSlave2.setColor(nodeMasterSlave.getColor());
 			
 			Edge edgeMSS1 = new Edge(network, nodeMasterSlave, nodeSlave);
 			network.addEdge(edgeMSS1);
@@ -568,7 +565,7 @@ public class ProcessingSimulation extends PApplet{
 			
 			for(Node nodeSlave: slaves) {
 				
-				Edge edgeSR1 = new Edge(network, nodeReflector1, nodeSlave);
+				Edge edgeSR1 = new Edge(network, nodeSlave, nodeReflector1);
 				network.addEdge(edgeSR1);
 				nodeSlave.addNeighbor(nodeReflector1);
 				nodeReflector1.addNeighbor(nodeSlave);
@@ -597,6 +594,9 @@ public class ProcessingSimulation extends PApplet{
 					
 			Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, 2048);
 			nodeMasterSlave.setComputer(newMasterSlave);
+			masterNode.addSlave(nodeMasterSlave);
+			
+			
 					
 			//add edges: master-masterSlave
 			Edge edge1 = new Edge(network, masterNode, nodeMasterSlave);
@@ -608,10 +608,12 @@ public class ProcessingSimulation extends PApplet{
 			Node nodeSlave = new Node(network, PIXEL_START_LEFT+randomX-30, 3*PIXEL_START_TOP+randomY+200);
 			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
 			nodeSlave.setComputer(newSlave);
+			nodeMasterSlave.addSlave(nodeSlave);
 			
 			Node nodeSlave2 = new Node(network, PIXEL_START_LEFT+randomX+30, 3*PIXEL_START_TOP+randomY+200);
 			Computer newSlave2 = new Computer("216.58.214."+nodeSlave2.getID(),"slave"+nodeSlave2.getID(), Computer.SLAVE, 2048);
 			nodeSlave2.setComputer(newSlave2);
+			nodeMasterSlave.addSlave(nodeSlave2);
 			
 			Edge edge2 = new Edge(network, nodeMasterSlave, nodeSlave);
 			Edge edge22 = new Edge(network, nodeSlave, targetNode);
