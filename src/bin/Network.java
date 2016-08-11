@@ -7,9 +7,9 @@ import graphic.ProcessingSimulation;
 public class Network {
 	private ProcessingSimulation procSim;
 	private Set<Node> allNodes = new HashSet<Node>();
-	private Set<Node> masterSlaves = new HashSet<Node>();
-	private Set<Node> slaves = new HashSet<Node>();
-	private Set<Node> reflectors = new HashSet<Node>();
+	private Vector<Node> masterSlaves = new Vector<Node>();
+	private Vector<Node> slaves = new Vector<Node>();
+	private Vector<Node> reflectors = new Vector<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
 	private Map<String, Node> ipAddressesMap = new HashMap<String, Node>();			// map for fast ipAddress searching
 	private Node masterNode = null, targetNode = null;
@@ -22,9 +22,9 @@ public class Network {
 	public Node getMasterNode() 	{ return masterNode; }
 	public Node getTargetNode() 	{ return targetNode; }
 	public Set<Node> getAllNodes()	{ return allNodes; }
-	public Set<Node> getMasterSlaveNodes() { return masterSlaves; }
-	public Set<Node> getSlaveNodes() { return slaves; }
-	public Set<Node> getReflectorNodes() { return reflectors; }
+	public Vector<Node> getMasterSlaveNodes() { return masterSlaves; }
+	public Vector<Node> getSlaveNodes() { return slaves; }
+	public Vector<Node> getReflectorNodes() { return reflectors; }
 	public Set<Edge> getAllEdges() 	{ return allEdges; }
 	public void incrementNumPackages() { numPackages++; }
 	public void decrementNumPackages() { numPackages--; }
