@@ -106,6 +106,23 @@ public class Network {
 		}
 	}
 	
+	public void sendFromAllMasters(int packageType) {
+		int inc = 1;
+		for (Node n: masterSlaves) {
+			for (Node s: n.getMySlaves()) {
+				Edge e = getEdge(n, s);
+				Package pack = new Package(e, 32, packageType);
+				// for faster simulation -> instead of seconds use milliseconds !
+				long currSec = System.currentTimeMillis()/1000;
+				pack.setTimeStartSending(currSec + inc++);
+				procSim.addPackageToMSQueue(pack);
+				pack.setStatus(Package.WAITING);
+				
+				n.getComputer().addSentPackage(pack);
+			}
+		}
+	}
+	
 	public float getTagetLeftPercent() {
 		return (float)targetNode.getComputer().getMemBuffSizeCurrent() / (float)targetNode.getComputer().getMemBuffSize();
 	}

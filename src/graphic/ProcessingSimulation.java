@@ -34,6 +34,7 @@ public class ProcessingSimulation extends PApplet{
 	private Node mostLeftDown, mostRightDown;
 	private int numLines;
 	private List<Package> packageQueue = new LinkedList<Package>();
+	private List<Package> MSPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
 	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
 	
@@ -174,6 +175,7 @@ public class ProcessingSimulation extends PApplet{
 		angleTargetMemory = (network.getTagetLeftPercent())*360;
 		
 		refreshPackageQueue();
+		refreshMSPackageQueue();
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
 			//check if all nodes received packages and then change servers -> infected slaves
@@ -217,12 +219,17 @@ public class ProcessingSimulation extends PApplet{
 	private void generateCYNpackages() {
 		long currSec = System.currentTimeMillis()/1000;
 		
-		if (lastPackageWave == 0) {
-			lastPackageWave = currSec;
-			network.sendFromAllSlaves(Package.CYN_PACKAGE);
-		} else if ((currSec - lastPackageWave) >= 4) {  
-			lastPackageWave = currSec;
-			network.sendFromAllSlaves(Package.CYN_PACKAGE);
+		if (!DDoSSimulation.globalGraphTypeU60) {
+			network.sendFromAllMasters(Package.CYN_PACKAGE);
+		}
+		else {
+			if (lastPackageWave == 0) {
+				lastPackageWave = currSec;
+				network.sendFromAllSlaves(Package.CYN_PACKAGE);
+			} else if ((currSec - lastPackageWave) >= 4) {  
+				lastPackageWave = currSec;
+				network.sendFromAllSlaves(Package.CYN_PACKAGE);
+			}
 		}
 	}
 	
@@ -247,8 +254,9 @@ public class ProcessingSimulation extends PApplet{
 			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 			
 			if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
+				 
 				drawAllTravellingPackages();
-				drawAllAckPackages();
+				drawAllAckPackages(); 
 			}
 			drawMemoryInfoCircle(angleTargetMemory);
 			
@@ -301,6 +309,28 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 	
+	private void refreshMSPackageQueue() {
+		long currSec = System.currentTimeMillis()/1000;
+		
+		Package head = null;
+		if (MSPackageQueue.size() > 0)
+			head = MSPackageQueue.get(0);
+		
+		while (head != null && head.getTimeStartSending() <= currSec && head.getStatus() == Package.WAITING) {
+			head.setStatus(Package.TRAVELING);
+			travellingPackages.add(head);
+			Edge edge = head.getEdge();
+			edge.startSendingPackage(head);
+			edge.writeSendingStart(head, getTerminal());
+			GUIcontrol.updateLastInputTerminal();
+			MSPackageQueue.remove(0);
+			if (MSPackageQueue.size() > 0)
+				head = MSPackageQueue.get(0);
+			else
+				head = null;
+		}
+	}
+	
 	private void drawAllAckPackages() {
 		long currSec = System.currentTimeMillis()/1000;
 		Set<UnknownPackage> newAckPackages = new HashSet<UnknownPackage>();
@@ -336,6 +366,7 @@ public class ProcessingSimulation extends PApplet{
 			stage = ProcessingSimulation.STAGE_GEN;
 	}
 	
+	
 	private void drawPackage_Helper(Package pack) {
 		float x = pack.getX();
 		float y = pack.getY();
@@ -363,18 +394,36 @@ public class ProcessingSimulation extends PApplet{
 		pack.setX(x);
 		pack.setY(y);
 		
-		stroke(0);
-		fill(175);
+		if (DDoSSimulation.globalGraphTypeU60) {
+			stroke(0);
+			fill(175);
+			
+			PImage img;
+			if (pack.getType() == Package.EMAIL_VIRUS)  
+				img = loadImage("email2.png");
+			else if (pack.getType() == Package.CYN_PACKAGE)
+				img = loadImage("spoofedPackage.png");
+			else 
+				img = loadImage("spoofedPackage.png");
+			
+			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+		}
+		else blinkEdges(pack);
+	}
+	
+	private void blinkEdges(Package pack) {
+		Edge e = pack.getEdge();
 		
-		PImage img;
-		if (pack.getType() == Package.EMAIL_VIRUS)  
-			img = loadImage("email2.png");
-		else if (pack.getType() == Package.CYN_PACKAGE)
-			img = loadImage("spoofedPackage.png");
-		else 
-			img = loadImage("spoofedPackage.png");
+		stroke(255,0,0);
+		strokeWeight(2);
+		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		
-		image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+		
+		stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
+		strokeWeight(1);
+		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
+		
+		
 	}
 	
 	private void drawPackage(Package pack) {
@@ -385,28 +434,39 @@ public class ProcessingSimulation extends PApplet{
 		// package is received - increase target memory, make ACK package, prepare ACK package for drawing
 		else if (pack.getType() == Package.CYN_PACKAGE) {	
 			pack.setStatus(Package.RECEIVED);
-			Node retNode = network.getTargetNode().processPackage(pack);
+			
+			if (!DDoSSimulation.globalGraphTypeU60) {
+				pack.getEdge().getNodeTo().processPackage(pack);
+				if (pack.getEdge().getNodeTo().getComputer().getType() == Computer.SLAVE && pack.getType() == Package.CYN_PACKAGE) {
+					Package newPack = pack.getEdge().getNodeTo().sendFromSlaveDirect(pack.getType());
+					addPackageToQueue(newPack);
+				}
+			}
 			
 			// spoofed ip address
-			if (retNode == null) {
-				int borderXTop = mostRightDown.getX();
-				int borderYTop = mostRightDown.getY();
-				float yFromArrow = network.getTargetNode().getY();
+			if (DDoSSimulation.globalGraphTypeU60) {
+				Node retNode = network.getTargetNode().processPackage(pack);
 				
-				float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
-				
-				Random random = new Random();
-				float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
-				
-				UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
-				
-				long currSec = System.currentTimeMillis()/1000;
-				unknown.setTimeCreated(currSec);
-				
-				ackPackages.add(unknown);
+				if (retNode == null) {
+					int borderXTop = mostRightDown.getX();
+					int borderYTop = mostRightDown.getY();
+					float yFromArrow = network.getTargetNode().getY();
+					
+					float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
+					
+					Random random = new Random();
+					float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+					
+					UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
+					
+					long currSec = System.currentTimeMillis()/1000;
+					unknown.setTimeCreated(currSec);
+					
+					ackPackages.add(unknown);
+				}
 			}
 			
-			}
+		}
 	}
 	
 	public void saveInitialNetwork() {
@@ -419,7 +479,7 @@ public class ProcessingSimulation extends PApplet{
 	}
 	
 	public void addPackageToQueue(Package pack) { packageQueue.add(pack); }
-
+	public void addPackageToMSQueue(Package pack) { MSPackageQueue.add(pack); }
 	//----------------------------------- FUNCTIONS FOR MAKING INIT NETWORK -------------------------------------//
 	
 	// create network without MASTER-SLAVEs
@@ -726,6 +786,7 @@ public class ProcessingSimulation extends PApplet{
 				int slaveIndex = rand.nextInt(slaves.size());
 				Node nodeSlave = slaves.get(slaveIndex);
 				makeNeighbours(nodeSlave, reflector);
+				nodeSlave.addSlave(reflector); //not sure if this should stay
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}

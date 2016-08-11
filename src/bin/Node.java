@@ -53,16 +53,32 @@ public class Node {
 	
 	public Color getColor () {return color;}
 	
+	public Package sendFromSlaveDirect(int packageType) {
+		Edge e = network.getEdge(this, network.getTargetNode());
+		Package pack = new Package(e, 32, packageType);
+		// for faster simulation -> instead of seconds use milliseconds !
+		long currSec = System.currentTimeMillis()/1000;
+		pack.setTimeStartSending(currSec);
+		pack.setStatus(Package.WAITING);
+		computer.addSentPackage(pack);
+		
+		return pack;
+	}
+	
 	public Node processPackage(Package pack) {
 		//check if there is return IP in network, and return ACK to it
-		Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
-		
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setReceivedTime(currSec);
-		computer.increaseMemory(pack.getSize());
-
 		computer.addReceivedPackage(pack);
-	
-		return retAckNode;
+		
+		if (computer.getType() == Computer.SLAVE) {
+			
+		}
+		else if (computer.getType() == Computer.TARGET) {
+			Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
+			computer.increaseMemory(pack.getSize());
+			return retAckNode;
+		}
+		return null;
 	}
 }
