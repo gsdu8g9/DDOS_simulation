@@ -24,7 +24,7 @@ public class DDoSSimulation {
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
 	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = true;
-	public static int globalNumSlaves = 150, globalNumMasterSlaves;
+	public static int globalNumSlaves = 25, globalNumMasterSlaves = 10;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
