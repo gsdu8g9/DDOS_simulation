@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.util.*;
 
 public class Node {
-	private static int generatorID = 1;
+	private static int generatorID = -1;
 	private Network network;
 	private int cordX, cordY, id;
 	private Set<Node> neighbors = new HashSet<Node> ();
@@ -36,6 +36,8 @@ public class Node {
 	public Computer getComputer() { return computer; }
 	
 	public int getID() { return id; }
+	
+	public void setID (int id) { if (computer.getType() == Computer.MASTER || computer.getType() == Computer.TARGET) this.id = id;}
 	
 	public void setComputer(Computer comp) { computer = comp; }
 	

@@ -718,10 +718,12 @@ public class ProcessingSimulation extends PApplet{
 		
 		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.MASTER, 2048);
 		Node masterNode = new Node(network, masterComputer, APPLET_WIDTH/2, 50);
+		masterNode.setID(500);
 		network.addNode(masterNode);
 		
 		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, 2048);
 		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
+		targetNode.setID(505);
 		network.addNode(targetNode);
 		
 		if (DDoSSimulation.globalDDOSTypeDirect) {

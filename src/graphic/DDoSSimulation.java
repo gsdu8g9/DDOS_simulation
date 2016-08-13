@@ -23,7 +23,7 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = false;
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeCYN = true, globalGraphTypeU60 = false;
 	public static int globalNumSlaves = 53, globalNumMasterSlaves = 10;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
