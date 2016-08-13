@@ -10,17 +10,14 @@ import javax.swing.JTextArea;
 
 public class ProcessingSimulation extends PApplet{
 	
-	private static final int PIXEL_RANGE_NODE = 60, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, PIXEL_START_LEFT = 100,
-							 MATRIX_RANGE_6 = 75, MATRIX_RANGE_5 = 100, MATRIX_RANGE_4 = 125, MATRIX_RANGE_3 = 150, MATRIX_RANGE_2 = 175, MATRIX_RANGE_1 = 200,
-							 PIXEL_START_TOP = 50, MAX_PER_LINE_UNDER_50 = 10, PIXEL_START_LEFT_EVEN = 100, PIXEL_START_LEFT_ODD = 50;
-	
+	public static final int PIXEL_RANGE_NODE = 60, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, PIXEL_START_LEFT = 100, PIXEL_START_TOP = 50,
+							PIXEL_START_LEFT_U30 = 200, MAX_MASTERS_U30 = 5;
 	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4,
-							STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
-	
+							 STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
+	public static final int X_STEP_U30 = 200, Y_STEP_U30 = 70;
 	public static final int TIMER_ACK_PROCESSING = 2;
 	
 	public static int speedUp = 1;
-	
 	public static int stageBeforePause = 2;
 	
 	private int infected = 0;
@@ -31,14 +28,11 @@ public class ProcessingSimulation extends PApplet{
 	private PImage networkBackground;
 	private boolean newImageToLoad = false, firstImageLoad = false;
 	private float angleTargetMemory = 0;
-	private Node mostLeftDown, mostRightDown;
-	private int numLines;
+	private Node mostRightDown;
 	private List<Package> packageQueue = new LinkedList<Package>();
 	private List<Package> MSPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
 	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
-	
-	private LinkedList<Node> nodesLine1 = null, nodesLine2 = null, nodesLine3 = null, nodesLine4 = null, nodesLine5 = null;
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
@@ -51,7 +45,7 @@ public class ProcessingSimulation extends PApplet{
 	public void setup() {
 	  smooth();
 	  background(255);
-	  drawNetworkBegging();
+	  drawNetworkBegining();
 	}
 	
 	public void infectSlaves() { 
@@ -60,7 +54,7 @@ public class ProcessingSimulation extends PApplet{
 		GUIcontrol.updateLastInputTerminal();
 	}
 	
-	private void drawNetworkBegging() {	
+	private void drawNetworkBegining() {	
 		background(255);
 		
 		PImage imgMaster = loadImage("Laptop3.png");
@@ -77,8 +71,6 @@ public class ProcessingSimulation extends PApplet{
 		textFont(font);
 		fill(0);
 		text("ATTACKER", network.getMasterNode().getX()-35, network.getMasterNode().getY()-40);
-		
-		
 		
 		//------------should appear only when DDoSSimulation.globalNumSlaves > 60
 		if (!DDoSSimulation.globalGraphTypeU60) {
@@ -106,7 +98,6 @@ public class ProcessingSimulation extends PApplet{
 				text("REFLECTORS", 965+PIXEL_START_LEFT, 90+9*PIXEL_START_TOP);
 			}
 		}
-		
 			  
 		stroke(0);
 		fill(175);
@@ -163,7 +154,6 @@ public class ProcessingSimulation extends PApplet{
 							image(imgClear, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 
 				}
-					
 				textFont(font);
 				fill(0);
 				text(n.getID(), n.getX()-15, n.getY()-5);
@@ -184,24 +174,25 @@ public class ProcessingSimulation extends PApplet{
 			for (Edge e: allEdges) {
 				Package virus = e.getVirusPackage();
 				if (infected < DDoSSimulation.globalNumSlaves && virus != null && virus.packageReceived() == true) {
+					virus.setStatus(Package.RECEIVED);
 					Node n = e.getNodeTo();
 					n.setInfected(true);
 					n.processPackage(virus);
-					drawNetworkBegging();
-					
+					drawNetworkBegining();
 					e.deleteVirusPackage();
 					infected++;
 					travellingPackages.remove(virus);
 					
 					saveFrame("data/initalNetwork.png");
 					newImageToLoad = true;
+					
 				}
 			}
 			
 			//wait for all slaves to be infected by virus
-			if (infected == DDoSSimulation.globalNumSlaves) {
+			if (infected == DDoSSimulation.globalNumMasterSlaves) {
 				infected = 0;
-				drawNetworkBegging();
+				drawNetworkBegining();
 				saveFrame("data/initalNetwork.png");
 				JTextArea terminal = getTerminal();
 				terminal.append("\n>Infecting done... \n>");
@@ -211,7 +202,6 @@ public class ProcessingSimulation extends PApplet{
 			}
 		} else if (stage == ProcessingSimulation.STAGE_GEN) {
 			generateCYNpackages();
-			
 			stage = ProcessingSimulation.STAGE_ATTACKING;
 		}
 	}
@@ -366,12 +356,9 @@ public class ProcessingSimulation extends PApplet{
 			stage = ProcessingSimulation.STAGE_GEN;
 	}
 	
-	
 	private void drawPackage_Helper(Package pack) {
 		float x = pack.getX();
 		float y = pack.getY();
-		
-		
 		
 		//if (travellingPackages.size()/10 > 0) speedUp = speedUp * travellingPackages.size()/10;
 		
@@ -418,12 +405,9 @@ public class ProcessingSimulation extends PApplet{
 		strokeWeight(2);
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		
-		
 		stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
 		strokeWeight(1);
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
-		
-		
 	}
 	
 	private void drawPackage(Package pack) {
@@ -465,7 +449,6 @@ public class ProcessingSimulation extends PApplet{
 					ackPackages.add(unknown);
 				}
 			}
-			
 		}
 	}
 	
@@ -479,239 +462,8 @@ public class ProcessingSimulation extends PApplet{
 	}
 	
 	public void addPackageToQueue(Package pack) { packageQueue.add(pack); }
+	
 	public void addPackageToMSQueue(Package pack) { MSPackageQueue.add(pack); }
-	//----------------------------------- FUNCTIONS FOR MAKING INIT NETWORK -------------------------------------//
-	
-	// create network without MASTER-SLAVEs
-	// arg1: skipFirstRow - to make space for MASTER-SLAVES
-	// arg2: drawEdgesToSlaves - to draw edges from masterSlaves to slaves (or this will be done from other func)
-	private void makeDirectedOnlySlavesUnder50(boolean skipFirstRow, boolean drawEdgesToSlaves) {
-		
-		Node masterNode = network.getMasterNode();
-		Node targetNode = network.getTargetNode();
-		
-		int n = 1; numLines = 1;
-		
-		if (DDoSSimulation.globalNumSlaves <= 60 && DDoSSimulation.globalNumSlaves > 50) 	  { n = 6; numLines = 6; }
-		else if (DDoSSimulation.globalNumSlaves <= 50 && DDoSSimulation.globalNumSlaves > 40) { n = 5; numLines = 5; }
-		else if (DDoSSimulation.globalNumSlaves <= 40 && DDoSSimulation.globalNumSlaves > 30) { n = 4; numLines = 4; }
-		else if (DDoSSimulation.globalNumSlaves <= 30 && DDoSSimulation.globalNumSlaves > 20) { n = 3; numLines = 3; }
-		else if (DDoSSimulation.globalNumSlaves <= 20 && DDoSSimulation.globalNumSlaves > 10) { n = 2; numLines = 2; }
-		
-		// calculate padding between nodes
-		int padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/n);
-		int toFill = 0;	
-		boolean lastFilling = false, end = false;
-		
-		if (DDoSSimulation.globalNumSlaves % n != 0) toFill = DDoSSimulation.globalNumSlaves % n;
-		
-		for (int j=0; j<n; j++) {
-		for (int i=0; i<DDoSSimulation.globalNumSlaves/n + ((toFill>0) ? 1 : 0); i++) {
-			Node nodeSlave = null;
-			if (toFill > 0) {
-				padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/(n)) - 10;
-				if (i == DDoSSimulation.globalNumSlaves/n + ((toFill>0) ? 1 : 0) - 1) {
-					//add to end one more node
-					toFill--;
-					if (toFill == 0) lastFilling = true;
-				}
-			}
-			
-			int paddingBegging = PIXEL_START_LEFT_ODD;
-			if ((j+1)%2 == 0 ) paddingBegging = PIXEL_START_LEFT_EVEN;
-			
-			if (skipFirstRow == false)
-				nodeSlave = new Node(network, paddingBegging + padding*i, PIXEL_START_TOP + getPaddingBetweenTopDown(false)*(j+1));
-			else
-				nodeSlave = new Node(network, paddingBegging + padding*i, PIXEL_START_TOP + getPaddingBetweenTopDown(true)*(j+2)+30);
-				
-			if (lastFilling) padding = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumSlaves/n);
-			
-			// check if LinkedList should be made
-			if (DDoSSimulation.globalNumMasterSlaves > 0) {
-				
-				//allocating lists 
-				if (nodesLine1 == null) {
-					switch (n) {
-					case 5: nodesLine5 = new LinkedList<Node>();
-					case 4: nodesLine4 = new LinkedList<Node>();
-					case 3: nodesLine3 = new LinkedList<Node>();
-					case 2: nodesLine2 = new LinkedList<Node>();
-					case 1: nodesLine1 = new LinkedList<Node>();
-					}
-				}
-				
-				//filling lists with nodes
-				switch(j) {
-				case 0: nodesLine1.add(nodeSlave); break;
-				case 1: nodesLine2.add(nodeSlave); break;
-				case 2: nodesLine3.add(nodeSlave); break;
-				case 3: nodesLine4.add(nodeSlave); break;
-				case 4: nodesLine5.add(nodeSlave); break;	
-				}
-			}
-			
-			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
-			nodeSlave.setComputer(newSlave);
-			
-			if (j == n-1 && i == DDoSSimulation.globalNumSlaves/n - 1)
-				mostRightDown = nodeSlave;
-			
-			if (i == n-1 && i == 0)
-				mostLeftDown = nodeSlave;
-			
-			if (drawEdgesToSlaves) {
-				Edge edge1 = new Edge(network, masterNode, nodeSlave);
-				network.addEdge(edge1);
-				masterNode.addNeighbor(nodeSlave);
-				nodeSlave.addNeighbor(masterNode);
-			}
-			
-			Edge edge2 = new Edge(network, nodeSlave, targetNode);
-			network.addEdge(edge2);				
-			nodeSlave.addNeighbor(targetNode);
-			targetNode.addNeighbor(nodeSlave);
-							
-			network.addNode(nodeSlave);
-			}
-		}
-	}
-
-	// returns HEIGHT padding between lines of slaves
-	// arg: skipFirstRow - to make space for MASTER-SLAVES
-	private int getPaddingBetweenTopDown(boolean skipFirstRow) {
-		int n = DDoSSimulation.globalNumSlaves / MAX_PER_LINE_UNDER_50;
-		
-		if (DDoSSimulation.globalNumSlaves % MAX_PER_LINE_UNDER_50 != 0) n += 1;
-		
-		if (skipFirstRow) n += 1;
-		
-		if (n == 6) return MATRIX_RANGE_6;
-		if (n == 5) return MATRIX_RANGE_5;
-		if (n == 4) return MATRIX_RANGE_4;
-		if (n == 3) return MATRIX_RANGE_3;
-		if (n == 2) return MATRIX_RANGE_2;
-		if (n == 1) return MATRIX_RANGE_1;
-		
-		// default - middle range
-		return MATRIX_RANGE_3;	
-	}
-	
-	private void connectEgde(Node masterSlave, LinkedList nodesLine) {
-		Node nodeSlave = (Node)nodesLine.removeFirst();
-		masterSlave.addSlave(nodeSlave);
-		nodeSlave.setColor(new Color(masterSlave.getColor().getRed(), masterSlave.getColor().getGreen(), masterSlave.getColor().getBlue()));
-		Edge edge1 = new Edge(network, masterSlave, nodeSlave);
-		network.addEdge(edge1);
-		masterSlave.addNeighbor(nodeSlave);
-		nodeSlave.addNeighbor(masterSlave);
-	}
-	
-	// making and connecting Egdes for MASTERSLAVEs - NODES from list 
-	// calls function above: connectEgde()
-	private void processLinkedListNodes(boolean last, Node masterSlave, LinkedList nodesLine, int toFill) {
-		
-		int nodesPerMaster = DDoSSimulation.globalNumSlaves / DDoSSimulation.globalNumMasterSlaves;
-	
-		if (toFill > 0) nodesPerMaster++;
-		
-		// if last - get all from all lists
-		if (last || nodesLine.size() < nodesPerMaster) {
-			if (nodesLine1 != null) {
-				while (nodesLine1.size() != 0) connectEgde(masterSlave, nodesLine1);
-				nodesLine1 = null;
-			}
-			if (nodesLine2 != null) {
-				while (nodesLine2.size() != 0) connectEgde(masterSlave, nodesLine2);
-				nodesLine2 = null;
-			}
-			if (nodesLine3 != null) {
-				while (nodesLine3.size() != 0) connectEgde(masterSlave, nodesLine3);
-				nodesLine3 = null;
-			}
-			if (nodesLine4 != null) {
-				while (nodesLine4.size() != 0) connectEgde(masterSlave, nodesLine4);
-				nodesLine4 = null;
-			}
-			if (nodesLine5 != null) {
-				while (nodesLine5.size() != 0) connectEgde(masterSlave, nodesLine5);
-				nodesLine5 = null;
-			}
-		} else { for (int i = 0; i<nodesPerMaster; i++) connectEgde(masterSlave, nodesLine); }
-	}
-	
-	// determines number of lists to use -> calls function above: processLinkedListNodes()
-	private void connectMasterAndNodesFromLists(int i, Node masterSlave, int toFill) {
-		
-		int noOrderList = (i+1) % numLines;
-		
-		// if last - get all from all lists
-		boolean last = false;
-		if ( i == DDoSSimulation.globalNumMasterSlaves - 1) last = true;
-		
-		switch(numLines) {
-		case 1: processLinkedListNodes(last, masterSlave, nodesLine1, toFill--); break;
-		case 2: switch(noOrderList) {
-				case 1: processLinkedListNodes(last, masterSlave, nodesLine1, toFill); break;
-				case 0: processLinkedListNodes(last, masterSlave, nodesLine2, toFill); break;
-				}
-				break;
-		case 3: switch(noOrderList) {
-				case 1:	processLinkedListNodes(last, masterSlave, nodesLine1, toFill); break;
-				case 2: processLinkedListNodes(last, masterSlave, nodesLine2, toFill); break;
-				case 0: processLinkedListNodes(last, masterSlave, nodesLine3, toFill); break;
-				}
-				break;
-		case 4: switch(noOrderList) {
-				case 1:	processLinkedListNodes(last, masterSlave, nodesLine1, toFill); break;
-				case 2: processLinkedListNodes(last, masterSlave, nodesLine2, toFill); break;
-				case 3: processLinkedListNodes(last, masterSlave, nodesLine3, toFill); break;
-				case 0: processLinkedListNodes(last, masterSlave, nodesLine4, toFill); break;
-				}
-				break;
-		case 5: switch(noOrderList) {
-				case 1:	processLinkedListNodes(last, masterSlave, nodesLine1, toFill); break;
-				case 2: processLinkedListNodes(last, masterSlave, nodesLine2, toFill); break;
-				case 3: processLinkedListNodes(last, masterSlave, nodesLine3, toFill); break;
-				case 4: processLinkedListNodes(last, masterSlave, nodesLine4, toFill); break;
-				case 0: processLinkedListNodes(last, masterSlave, nodesLine5, toFill); break;
-				}
-		}	
-	}
-	
-	//TODO: pre poziva ove funkcije se mora proveriti da li je globalMasterSlaves > 10
-	//		i ako jeste ispisati ERROR i uopste ne pozivati funckiju - zato se ovde ni ne proverava to
-	private void makeInternalDirectUnder50() {
-		if (DDoSSimulation.globalNumMasterSlaves == 0) makeDirectedOnlySlavesUnder50(false,true);
-		
-		Random rand = new Random();
-		
-		//first make slaves without egdes to them and with space for masters
-		makeDirectedOnlySlavesUnder50(true, false);
-		
-		int paddingMasterSlaves = (APPLET_WIDTH - PIXEL_START_LEFT) / (DDoSSimulation.globalNumMasterSlaves);
-		
-		int toFill = DDoSSimulation.globalNumSlaves % DDoSSimulation.globalNumMasterSlaves;
-		
-		for (int i=0; i < DDoSSimulation.globalNumMasterSlaves; i++) {
-			Node masterSlave = new Node(network, PIXEL_START_LEFT + paddingMasterSlaves * i, PIXEL_START_TOP + getPaddingBetweenTopDown(false) - 30);
-			masterSlave.setColor(new Color(rand.nextInt(254),rand.nextInt(254), rand.nextInt(254)));
-			Computer newMasterSlave = new Computer("216.58.214." + masterSlave.getID(), "MASTER_ZOMBIE" + masterSlave.getID(), Computer.MASTER_SLAVE, 2048);
-			masterSlave.setComputer(newMasterSlave);
-			
-			//drawing egdes from MASTERSLAVE -> SLAVEs
-			connectMasterAndNodesFromLists(i, masterSlave, toFill--);
-			
-			//draw edges from ATTACKER -> MASTERSLAVEs
-			Edge edge1 = new Edge(network, network.getMasterNode(), masterSlave);
-			network.addEdge(edge1);
-			masterSlave.addNeighbor(network.getMasterNode());
-			network.getMasterNode().addNeighbor(masterSlave);
-			network.getMasterNode().addSlave(masterSlave);
-			
-			network.addNode(masterSlave);
-		}
-	}
 	
 	public void makeNetworkDefault() { 
 		network = new Network(this);
@@ -727,20 +479,18 @@ public class ProcessingSimulation extends PApplet{
 		network.addNode(targetNode);
 		
 		if (DDoSSimulation.globalDDOSTypeDirect) {
-			if (DDoSSimulation.globalGraphTypeU60) { 	//internal,direct, u60
-				makeInternalDirectUnder50();
-				//makeDirectedOnlySlavesUnder50(true,false);	----> TESTING
-			} else { 									// internal, direct, a60
+			if (DDoSSimulation.globalGraphTypeU60) { 	
+				makeInternalDirectUnder30();	
+			} else { 									
 				makeInternalDirectAbove50();
 			}
-		} else { //reflected
-			if (DDoSSimulation.globalGraphTypeU60) { //internal,reflected, u60
-				
-			} else { // internal, reflected, a60
+		} else { 
+			if (DDoSSimulation.globalGraphTypeU60) { 
+				makeInternalReflectedUnder30();
+			} else {
 				makeInternalReflectedAbove50();
 			}
 		}
-			
 	}
 		
 	public void makeInternalReflectedAbove50() {
@@ -821,7 +571,6 @@ public class ProcessingSimulation extends PApplet{
 					makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35+35*(j+1), Y, 250);
 				}
 			}
-			
 		}		
 	}
 	
@@ -867,13 +616,11 @@ public class ProcessingSimulation extends PApplet{
 	}
 	
 	private void makeReflectorAndAddToNetwork(int leftStart, int X, int Y, int Yoffset) {
-		
 		Node nodeReflector1 = new Node(network, leftStart+X, 3*PIXEL_START_TOP+Y+Yoffset);
 		Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING, 2048);
 		nodeReflector1.setComputer(newReflector1);
 		network.addNode(nodeReflector1);
 		network.addReflectorNode(nodeReflector1);
-		
 	}
 	
 	public void checkClickedComputer(int cordmouseX, int cordmouseY) {
@@ -896,6 +643,80 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 
+	public void makeInternalDirectUnder30() {
+		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/3;
+		int toFill = masters % MAX_MASTERS_U30;
+		int linePixel = masters / MAX_MASTERS_U30 * Y_STEP_U30;
+		
+		for (int i=0; i<masters; i++) {
+			int X = i % MAX_MASTERS_U30 * X_STEP_U30;
+			int Y = i / MAX_MASTERS_U30 * Y_STEP_U30;
+			
+			int leftStart = PIXEL_START_LEFT_U30;
+			if (Y == linePixel && toFill != 0) leftStart = PIXEL_START_LEFT_U30 + 400 - (toFill-1) * 100;
+			
+			Node nodeMasterSlave = makeMasterSlaveAndAddToNetwork(leftStart, X, Y);
+			
+			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X-50, Y, 250);
+			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50, Y, 250);
+			
+			if (i == (masters-1) && (DDoSSimulation.globalNumSlaves%3 > 0)) {
+				for (int j=0; j<DDoSSimulation.globalNumSlaves%3; j++) {
+					makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50+100*(j+1), Y, 250);
+				}
+			}
+		}
+		mostRightDown = network.getNodeByID(2 + DDoSSimulation.globalNumSlaves);
+	}
+
+	public void makeInternalReflectedUnder30() {
+		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/3;
+		int toFill = masters % MAX_MASTERS_U30;
+		int linePixel = masters / MAX_MASTERS_U30 * Y_STEP_U30;
+		
+		for (int i=0; i<masters; i++) {
+			
+			int X = i % MAX_MASTERS_U30 * X_STEP_U30;
+			int Y = i / MAX_MASTERS_U30 * Y_STEP_U30;
+			
+			int leftStart = PIXEL_START_LEFT_U30;
+			if (Y==linePixel && toFill!=0) leftStart = PIXEL_START_LEFT_U30 + 400 - (toFill-1) * 100;
+			
+			Node nodeMasterSlave = makeMasterSlaveAndAddToNetwork(leftStart, X, Y);
+			
+			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X-70, Y, 100);
+			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X, Y, 100);
+			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+70, Y, 100);
+			
+			makeReflectorAndAddToNetwork(leftStart, X-70, Y, 350);
+			makeReflectorAndAddToNetwork(leftStart, X, Y, 350);
+			makeReflectorAndAddToNetwork(leftStart, X+70, Y, 350);
+			
+			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%3 > 0)) {
+				for (int j=0; j<DDoSSimulation.globalNumSlaves%3; j++) {
+					if (j%2 == 0) makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+70+100*((j+2)/2), Y, 100);
+					else makeReflectorAndAddToNetwork(leftStart, X+70+100*((j+2)/2), Y, 350);
+				}
+			}
+			
+		}	
+		
+		Vector<Node> reflectors = network.getReflectorNodes();
+		Vector<Node> slaves = network.getSlaveNodes();
+		
+		for(Node reflector: reflectors) {
+			for(int i =0; i<7; i++) {
+				
+				Random rand = new Random();
+				int slaveIndex = rand.nextInt(slaves.size());
+				Node nodeSlave = slaves.get(slaveIndex);
+				makeNeighbours(nodeSlave, reflector);
+				nodeSlave.addSlave(reflector); //not sure if this should stay
+			}
+			makeNeighbours(reflector, network.getTargetNode());
+		}
+	}
+	
 	public void startDDos() { stage = ProcessingSimulation.STAGE_GEN; }
 	
 	public JTextArea getTerminal() { return GUIcontrol.getTerminal(); }
