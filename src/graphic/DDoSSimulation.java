@@ -23,8 +23,8 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = false;
-	public static int globalNumSlaves = 53, globalNumMasterSlaves = 10;
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU60 = true;
+	public static int globalNumSlaves = 40, globalNumMasterSlaves = 5;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
@@ -157,9 +157,7 @@ public class DDoSSimulation {
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
 		numMastersTF = new JTextField(15);		JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
-												JTextField dummy12 = new JTextField(10);	dummy12.setVisible(false);
 		
-		cSlavesConfig.add(new JLabel("Number of masters:"));	cSlavesConfig.add(numMastersTF); 	cSlavesConfig.add(dummy12);										
 		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
 		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
 		cSlavesConfig.add(new JLabel("Memory in time:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);

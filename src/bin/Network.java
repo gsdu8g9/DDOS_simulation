@@ -2,6 +2,7 @@ package bin;
 
 import java.util.*;
 
+import graphic.DDoSSimulation;
 import graphic.ProcessingSimulation;
 
 public class Network {
@@ -127,6 +128,10 @@ public class Network {
 		return (float)targetNode.getComputer().getMemBuffSizeCurrent() / (float)targetNode.getComputer().getMemBuffSize();
 	}
 
-	
-	// function for ping
+	public Node getNodeByID(int id) {
+		for (Node n: allNodes)
+			if (n.getID() == id) return n;
+		
+		return null;
+	}
 }
