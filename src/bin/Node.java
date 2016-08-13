@@ -3,6 +3,9 @@ package bin;
 import java.awt.Color;
 import java.util.*;
 
+import graphic.DDoSSimulation;
+import graphic.ProcessingSimulation;
+
 public class Node {
 	private static int generatorID = -1;
 	private Network network;
@@ -62,7 +65,6 @@ public class Node {
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setTimeStartSending(currSec);
 		pack.setStatus(Package.WAITING);
-		computer.addSentPackage(pack);
 		
 		return pack;
 	}
@@ -71,10 +73,39 @@ public class Node {
 		//check if there is return IP in network, and return ACK to it
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setReceivedTime(currSec);
-		computer.addReceivedPackage(pack);
 		
+		computer.addReceivedPackage(pack);
+		pack.getEdge().getNodeFrom().getComputer().addSentPackage(pack);
+		pack.setStatus(Package.RECEIVED);
+		
+		switch (pack.getType()) {
+			case Package.EMAIL_VIRUS :  processVirus(pack); return null;
+			case Package.CYN_PACKAGE: ; return processCYNpackage(pack);
+			case Package.ICMP_PACKAGE: ; return processICMPpackage(pack);
+			default: return null;
+		}
+		
+		
+	}
+	
+	private void processVirus(Package virus) {
+		
+		infected = true;
+		network.getProcSim().newInfected(virus);
+		
+	}
+	
+	private Node processCYNpackage(Package pack) {
 		if (computer.getType() == Computer.SLAVE) {
 			
+			if (DDoSSimulation.globalDDOSTypeDirect) { //slave sends new package to target direct 
+				Package newPack = sendFromSlaveDirect(pack.getType());
+				network.getProcSim().addPackageToQueue(newPack);
+			}
+			else { 										//slave sends to reflecting nodes
+				
+			}
+			return null;	
 		}
 		else if (computer.getType() == Computer.TARGET) {
 			Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
@@ -83,4 +114,10 @@ public class Node {
 		}
 		return null;
 	}
+
+	private Node processICMPpackage(Package pack) {
+		return null;
+	}
+
+	
 }

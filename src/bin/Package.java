@@ -44,7 +44,12 @@ public class Package {
 	public Edge getEdge() { return edge; }
 	
 	public boolean packageReceived() {
-		if ( cordY >= edge.getNodeTo().getY() ) return true;
+		if (status == Package.RECEIVED) return true;
+		
+		if ( cordY >= edge.getNodeTo().getY() ) {
+			status = Package.RECEIVED;
+			return true;
+		}
 		else return false;
 	}
 	

@@ -23,8 +23,9 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeCYN = true, globalGraphTypeU60 = false;
-	public static int globalNumSlaves = 53, globalNumMasterSlaves = 10;
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = false;
+	public static int globalNumSlaves = 57, globalNumMasterSlaves = 10;
+	public static int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
@@ -35,19 +36,20 @@ public class DDoSSimulation {
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF, numMastersTF; 
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal, packages_received_detail, packages_sent_detail;
+	private JButton startDDoS;
 	
 	private int packageType = 1, lastInputTerminal = 1;
 	
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
-	private int ttlConf = 4, memoryConf = 0, packageConf = 32;
+	
 	
 	public DDoSSimulation() {
-		//makePopUpStart();
-		makeWindow();
+		makePopUpStart();
+		//makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.makeNetworkDefault();
-		runSimulation();
+		//procGraphic.makeNetworkDefault();
+		//runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -96,13 +98,13 @@ public class DDoSSimulation {
 		JPanel numberSlaves = new JPanel();
 		numberSlaves.setBorder(BorderFactory.createTitledBorder("Number of slaves"));
 		ButtonGroup slavesG = new ButtonGroup();
-		JRadioButton under60 = new JRadioButton("REAL SIM- under 60");
-		JRadioButton above60 = new JRadioButton("GRAPH SIM - above 60");
-		under60.setSelected(true);
-		slavesG.add(under60);				
-		slavesG.add(above60);			
-		numberSlaves.add(under60);				
-		numberSlaves.add(above60);			
+		JRadioButton under45 = new JRadioButton("REAL SIM- under 60");
+		JRadioButton above45 = new JRadioButton("GRAPH SIM - above 60");
+		under45.setSelected(true);
+		slavesG.add(under45);				
+		slavesG.add(above45);			
+		numberSlaves.add(under45);				
+		numberSlaves.add(above45);			
 		startingPanel.add(numberSlaves);
 		
 		JButton confirm = new JButton("START");
@@ -119,7 +121,7 @@ public class DDoSSimulation {
 				globalResourceTypeInternal = internalResources.isSelected();
 				globalDDOSTypeDirect = direct.isSelected();
 				globalPackageTypeCYN = cyn.isSelected();
-				globalGraphTypeU60 = under60.isSelected();
+				globalGraphTypeU45 = under45.isSelected();
 				
 				makeWindow();
 			}
@@ -127,7 +129,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		//popUpStart.setVisible(false);
+		popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -177,7 +179,7 @@ public class DDoSSimulation {
 		JButton startInfectingMasters = new JButton("Start infecting master zombies");
 		cAttackOptions.add(startInfectingMasters);
 		
-		JButton startDDoS = new JButton("Start DDOS attack");
+		startDDoS = new JButton("Start DDOS attack");
 		startDDoS.setEnabled(false);
 		cAttackOptions.add(startDDoS);
 		
@@ -278,7 +280,7 @@ public class DDoSSimulation {
 		        			procGraphic.infectSlaves();
 		        	} 
 		        	else if (command.equals("start ddos")) { //----------------------------------------------------------
-		        		if (procGraphic.getStage() == ProcessingSimulation.STAGE_IDLE)
+		        		if (procGraphic.getStage() == ProcessingSimulation.STAGE_ALL_INFECTED)
 		        			procGraphic.startDDos();
 		        		else {
 		        			terminal.append("\n>Infect slaves first... \n>");
@@ -338,7 +340,6 @@ public class DDoSSimulation {
 				
 				procGraphic.infectSlaves();
 				startInfectingMasters.setEnabled(false);
-				startDDoS.setEnabled(true);
 				pausePlay.setEnabled(true);
 			}
 		});
@@ -492,6 +493,7 @@ public class DDoSSimulation {
 	
 	public void detailPanelVisible(boolean value) { detailsPanel.setVisible(value);}
 	public void historyPanelVisible(boolean value) { historyPanel.setVisible(value);}
+	public void setStartDDoSEnabled() {startDDoS.setEnabled(true);}
 	
 	public JTextArea getTerminal() {
 		return terminal;

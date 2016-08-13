@@ -9,7 +9,6 @@ public class Edge {
 	private String returnIPaddress = "";
 	private Network network;
 	private Set<Package> packages;
-	private Package virusPackage = null;
 	
 	public Edge(Network network, Node nodeFrom, Node nodeTo) {
 		this.nodeFrom = nodeFrom;
@@ -25,20 +24,13 @@ public class Edge {
 		pack.setX(nodeFrom.getX());
 		pack.setY(nodeFrom.getY());
 		packages.add(pack);
-		if (pack.getType() == Package.EMAIL_VIRUS) virusPackage = pack;
 	}
 	
 	public Set<Package> getPackages() { return packages; }
-	public Package getVirusPackage() { return virusPackage; }
 	
 	public String getReturnIPAddress() { return returnIPaddress; }
 	public void setReturnIPAddress(String ipAddress) { returnIPaddress = ipAddress; }
-	
-	public void deleteVirusPackage() { 
-		virusPackage = null; 
-		network.decrementNumPackages();
-	}
-	
+		
 	public void writeSendingStart(Package pack, JTextArea terminal) {
 		if (pack.getType() == Package.EMAIL_VIRUS)
 			terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 

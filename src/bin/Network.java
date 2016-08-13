@@ -30,6 +30,7 @@ public class Network {
 	public void incrementNumPackages() { numPackages++; }
 	public void decrementNumPackages() { numPackages--; }
 	public int getNumPackages() 	{ return numPackages; }
+	public ProcessingSimulation getProcSim() { return procSim; }
 	
 	public Node findIPAddress(String ipAddress) { return ipAddressesMap.get(ipAddress); }
 	
@@ -78,14 +79,14 @@ public class Network {
 		int inc = 1;
 		for(Edge e: allEdges) {
 			if (e.getNodeFrom().equals(getMasterNode())) {
-				Package pack = new Package(e, 32, Package.EMAIL_VIRUS);
+				Package pack = new Package(e, DDoSSimulation.packageConf, Package.EMAIL_VIRUS);
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
 				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
 				
-				e.getNodeFrom().getComputer().addSentPackage(pack);
+				//e.getNodeFrom().getComputer().addSentPackage(pack);
 			}
 		}
 	}
@@ -95,14 +96,14 @@ public class Network {
 		for (Node n: allNodes) {
 			if (n.getComputer().getType() == Computer.SLAVE) {
 				Edge e = getEdge(n, targetNode);
-				Package pack = new Package(e, 32, packageType);
+				Package pack = new Package(e, DDoSSimulation.packageConf, packageType);
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
 				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
 				
-				n.getComputer().addSentPackage(pack);
+				//n.getComputer().addSentPackage(pack);
 			}
 		}
 	}
@@ -119,7 +120,7 @@ public class Network {
 				procSim.addPackageToMSQueue(pack);
 				pack.setStatus(Package.WAITING);
 				
-				n.getComputer().addSentPackage(pack);
+				//n.getComputer().addSentPackage(pack);
 			}
 		}
 	}

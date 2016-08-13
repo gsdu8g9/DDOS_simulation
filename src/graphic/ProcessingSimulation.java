@@ -12,15 +12,15 @@ public class ProcessingSimulation extends PApplet{
 	
 	public static final int PIXEL_RANGE_NODE = 60, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, PIXEL_START_LEFT = 100, PIXEL_START_TOP = 50,
 							PIXEL_START_LEFT_U30 = 200, MAX_MASTERS_U30 = 5;
-	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_IDLE = 3, STAGE_ATTACKING = 4,
+	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_ALL_INFECTED = 3, STAGE_ATTACKING = 4,
 							 STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
 	public static final int X_STEP_U30 = 200, Y_STEP_U30 = 70;
 	public static final int TIMER_ACK_PROCESSING = 2;
 	
 	public static int speedUp = 1;
 	public static int stageBeforePause = 2;
+	public static int infected = 0;
 	
-	private int infected = 0;
 	private long lastPackageWave = 0;
 	private Network network;
 	private DDoSSimulation GUIcontrol;
@@ -54,7 +54,7 @@ public class ProcessingSimulation extends PApplet{
 		GUIcontrol.updateLastInputTerminal();
 	}
 	
-	private void drawNetworkBegining() {	
+	public void drawNetworkBegining() {	
 		background(255);
 		
 		PImage imgMaster = loadImage("Laptop3.png");
@@ -73,7 +73,7 @@ public class ProcessingSimulation extends PApplet{
 		text("ATTACKER", network.getMasterNode().getX()-35, network.getMasterNode().getY()-40);
 		
 		//------------should appear only when DDoSSimulation.globalNumSlaves > 60
-		if (!DDoSSimulation.globalGraphTypeU60) {
+		if (!DDoSSimulation.globalGraphTypeU45) {
 			if (DDoSSimulation.globalDDOSTypeDirect) {
 				textFont(font);
 				fill(0,0,100);
@@ -106,17 +106,15 @@ public class ProcessingSimulation extends PApplet{
 		//draw edges
 		Set<Edge> allEdges = network.getAllEdges();
 		for(Edge e: allEdges) {
-			if (!DDoSSimulation.globalGraphTypeU60) {
+			
+			if (e.getNodeTo().getComputer().getType() == Computer.TARGET || e.getNodeTo().getComputer().getType() == Computer.MASTER_SLAVE) {
+				stroke(0);
+				strokeWeight(1);
+			}
+			else {
 				stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
-			} else {
-				if (e.getNodeTo().getComputer().getType() == Computer.TARGET || e.getNodeTo().getComputer().getType() == Computer.MASTER_SLAVE) {
-					stroke(0);
-					strokeWeight(1);
-				}
-				else {
-					stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
-					strokeWeight(3);
-				}
+				if (DDoSSimulation.globalGraphTypeU45) strokeWeight(3);
+				else strokeWeight(1);
 			}
 			line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		}
@@ -138,7 +136,7 @@ public class ProcessingSimulation extends PApplet{
 					stroke(0);
 					fill(ntype == Computer.MASTER_SLAVE? 100: 255,0 ,0);
 					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
-					if (DDoSSimulation.globalNumSlaves<=50) image(imgInfected, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
+					if (DDoSSimulation.globalNumSlaves<=45) image(imgInfected, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 				}
 				else {
 					stroke(0);
@@ -147,7 +145,7 @@ public class ProcessingSimulation extends PApplet{
 					fill(n.getColor().getRed(), n.getColor().getGreen(), n.getColor().getBlue());
 					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
 
-					if (DDoSSimulation.globalNumSlaves<=50) 
+					if (DDoSSimulation.globalNumSlaves<=45) 
 						if (ntype == Computer.MASTER_SLAVE)
 							image(imgMasterSlave, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 						else
@@ -159,6 +157,7 @@ public class ProcessingSimulation extends PApplet{
 				text(n.getID(), n.getX()-15, n.getY()-5);
 			}
 		}
+		saveFrame("data/initalNetwork.png");
 	}
 
 	private void update() {
@@ -168,26 +167,6 @@ public class ProcessingSimulation extends PApplet{
 		refreshMSPackageQueue();
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
-			//check if all nodes received packages and then change servers -> infected slaves
-			Set<Edge> allEdges = network.getAllEdges();
-			
-			for (Edge e: allEdges) {
-				Package virus = e.getVirusPackage();
-				if (infected < DDoSSimulation.globalNumSlaves && virus != null && virus.packageReceived() == true) {
-					virus.setStatus(Package.RECEIVED);
-					Node n = e.getNodeTo();
-					n.setInfected(true);
-					n.processPackage(virus);
-					drawNetworkBegining();
-					e.deleteVirusPackage();
-					infected++;
-					travellingPackages.remove(virus);
-					
-					saveFrame("data/initalNetwork.png");
-					newImageToLoad = true;
-					
-				}
-			}
 			
 			//wait for all slaves to be infected by virus
 			if (infected == DDoSSimulation.globalNumMasterSlaves) {
@@ -198,7 +177,9 @@ public class ProcessingSimulation extends PApplet{
 				terminal.append("\n>Infecting done... \n>");
 				GUIcontrol.updateLastInputTerminal();
 				
-				stage = ProcessingSimulation.STAGE_IDLE;
+				stage = ProcessingSimulation.STAGE_ALL_INFECTED;
+				GUIcontrol.setStartDDoSEnabled();
+				
 			}
 		} else if (stage == ProcessingSimulation.STAGE_GEN) {
 			generateCYNpackages();
@@ -209,7 +190,7 @@ public class ProcessingSimulation extends PApplet{
 	private void generateCYNpackages() {
 		long currSec = System.currentTimeMillis()/1000;
 		
-		if (!DDoSSimulation.globalGraphTypeU60) {
+		if (!DDoSSimulation.globalGraphTypeU45) {
 			network.sendFromAllMasters(Package.CYN_PACKAGE);
 		}
 		else {
@@ -381,7 +362,7 @@ public class ProcessingSimulation extends PApplet{
 		pack.setX(x);
 		pack.setY(y);
 		
-		if (DDoSSimulation.globalGraphTypeU60) {
+		if (DDoSSimulation.globalGraphTypeU45) {
 			stroke(0);
 			fill(175);
 			
@@ -402,7 +383,7 @@ public class ProcessingSimulation extends PApplet{
 		Edge e = pack.getEdge();
 		
 		stroke(255,0,0);
-		strokeWeight(2);
+		strokeWeight(3);
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		
 		stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
@@ -416,37 +397,31 @@ public class ProcessingSimulation extends PApplet{
 			drawPackage_Helper(pack);
 		}
 		// package is received - increase target memory, make ACK package, prepare ACK package for drawing
-		else if (pack.getType() == Package.CYN_PACKAGE) {	
-			pack.setStatus(Package.RECEIVED);
-			
-			if (!DDoSSimulation.globalGraphTypeU60) {
-				pack.getEdge().getNodeTo().processPackage(pack);
-				if (pack.getEdge().getNodeTo().getComputer().getType() == Computer.SLAVE && pack.getType() == Package.CYN_PACKAGE) {
-					Package newPack = pack.getEdge().getNodeTo().sendFromSlaveDirect(pack.getType());
-					addPackageToQueue(newPack);
-				}
-			}
-			
-			// spoofed ip address
-			if (DDoSSimulation.globalGraphTypeU60) {
-				Node retNode = network.getTargetNode().processPackage(pack);
-				
-				if (retNode == null) {
-					int borderXTop = mostRightDown.getX();
-					int borderYTop = mostRightDown.getY();
-					float yFromArrow = network.getTargetNode().getY();
+		else{
+			pack.getEdge().getNodeTo().processPackage(pack);
+			if (pack.getType() == Package.CYN_PACKAGE) {	
+		
+				// spoofed ip address
+				if (DDoSSimulation.globalGraphTypeU45) {
+					Node retNode = network.getTargetNode().processPackage(pack);
 					
-					float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
-					
-					Random random = new Random();
-					float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
-					
-					UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
-					
-					long currSec = System.currentTimeMillis()/1000;
-					unknown.setTimeCreated(currSec);
-					
-					ackPackages.add(unknown);
+					if (retNode == null) {
+						int borderXTop = mostRightDown.getX();
+						int borderYTop = mostRightDown.getY();
+						float yFromArrow = network.getTargetNode().getY();
+						
+						float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
+						
+						Random random = new Random();
+						float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+						
+						UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
+						
+						long currSec = System.currentTimeMillis()/1000;
+						unknown.setTimeCreated(currSec);
+						
+						ackPackages.add(unknown);
+					}
 				}
 			}
 		}
@@ -479,13 +454,13 @@ public class ProcessingSimulation extends PApplet{
 		network.addNode(targetNode);
 		
 		if (DDoSSimulation.globalDDOSTypeDirect) {
-			if (DDoSSimulation.globalGraphTypeU60) { 	
+			if (DDoSSimulation.globalGraphTypeU45) { 	
 				makeInternalDirectUnder30();	
 			} else { 									
 				makeInternalDirectAbove50();
 			}
 		} else { 
-			if (DDoSSimulation.globalGraphTypeU60) { 
+			if (DDoSSimulation.globalGraphTypeU45) { 
 				makeInternalReflectedUnder30();
 			} else {
 				makeInternalReflectedAbove50();
@@ -733,4 +708,13 @@ public class ProcessingSimulation extends PApplet{
 	}
 	
 	public boolean isPaused() { return stage == STAGE_PAUSE; }
+	
+	public void newInfected(Package virus) {
+		
+		drawNetworkBegining();
+		infected++;
+		saveFrame("data/initalNetwork.png");
+		newImageToLoad = true;
+				
+	}
 }
