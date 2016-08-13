@@ -25,14 +25,14 @@ public class ProcessingSimulation extends PApplet{
 	private Network network;
 	private DDoSSimulation GUIcontrol;
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
+	private int prevRandomX = 0, prevRandomY = 0;
 	private PImage networkBackground;
 	private boolean newImageToLoad = false, firstImageLoad = false;
-	private float angleTargetMemory = 0;
 	private Node mostRightDown;
 	private List<Package> packageQueue = new LinkedList<Package>();
 	private List<Package> MSPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
-	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
+	private Set<OutsidePackage> ackPackages = new HashSet<OutsidePackage>();
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
@@ -159,11 +159,13 @@ public class ProcessingSimulation extends PApplet{
 				text(n.getID(), n.getX()-15, n.getY()-5);
 			}
 		}
+		
+		//drawing user icon
+		PImage imgUser = loadImage("user.png");
+		image(imgUser, APPLET_WIDTH - 100, network.getTargetNode().getY()-40, 70, 70); 
 	}
 
 	private void update() {
-		angleTargetMemory = (network.getTagetLeftPercent())*360;
-		
 		refreshPackageQueue();
 		refreshMSPackageQueue();
 		
@@ -201,6 +203,7 @@ public class ProcessingSimulation extends PApplet{
 				stage = ProcessingSimulation.STAGE_IDLE;
 			}
 		} else if (stage == ProcessingSimulation.STAGE_GEN) {
+			generateCYNpackages();
 			generateCYNpackages();
 			stage = ProcessingSimulation.STAGE_ATTACKING;
 		}
@@ -248,33 +251,40 @@ public class ProcessingSimulation extends PApplet{
 				drawAllTravellingPackages();
 				drawAllAckPackages(); 
 			}
-			drawMemoryInfoCircle(angleTargetMemory);
+			drawMemoryInfoBar();
 			
 			if (network.getTargetNode().getComputer().isMemoryFull())
 				stage = ProcessingSimulation.STAGE_FINISHED;
 		}
 	}
 	
-	private void drawMemoryInfoCircle(float angleTargetMemory) {
+	private void drawMemoryInfoBar() {
+		float targetMemory = network.getTagetLeftPercent() * 100;
 		Color color = null;
-		if ((angleTargetMemory/36)*10 < 30) color = Color.GREEN;
-		else if ((angleTargetMemory/36)*10 > 30 && (angleTargetMemory/36)*10 < 60) color = Color.ORANGE;
+		PFont font = loadFont("coder-15.vlw");
+		textFont(font);
+		
+		if ((targetMemory) < 30) color = Color.GREEN;
+		else if ((targetMemory) > 30 && (targetMemory) < 60) color = Color.ORANGE;
 		else color = Color.RED;
 		
-		if (angleTargetMemory > 0) {
-			noStroke();
-			fill(color.getRGB(), 51);
-			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 200, 200, 0, radians(angleTargetMemory));
+		int x = network.getTargetNode().getX();
+		int y = network.getTargetNode().getY();
+		
+		fill(0);
+		text("TARGET MEMORY:", 25, y + 17);
 			
-			noStroke();
-			fill(255);
-			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 100, 100, 0, radians(360));
+		stroke(0);
+		fill(255);
+		strokeWeight(1);
+		rect(150, y-5, x-150-50, 35);
 			
-			PFont font = loadFont("coder-15.vlw");
-			textFont(font);
-			fill(0);
-			text((angleTargetMemory/36)*10+"%", APPLET_WIDTH - 230, APPLET_HEIGHT - 150);
-		}
+		noStroke();
+		fill(color.getRGB(), 127);
+		rect(x - 50, y, -targetMemory*4, 25);
+			
+		fill(0);
+		text(targetMemory+"%", x - 120, y + 15);
 	}
 	
 	private void refreshPackageQueue() {
@@ -323,9 +333,9 @@ public class ProcessingSimulation extends PApplet{
 	
 	private void drawAllAckPackages() {
 		long currSec = System.currentTimeMillis()/1000;
-		Set<UnknownPackage> newAckPackages = new HashSet<UnknownPackage>();
+		Set<OutsidePackage> newAckPackages = new HashSet<OutsidePackage>();
 		
-		for (UnknownPackage ack: ackPackages)
+		for (OutsidePackage ack: ackPackages)
 			if (currSec - ack.getTimeCreated() < TIMER_ACK_PROCESSING) {
 				newAckPackages.add(ack);
 				drawAckPackage_Helper(ack);
@@ -334,11 +344,24 @@ public class ProcessingSimulation extends PApplet{
 		ackPackages = newAckPackages;
 	}
 	
-	private void drawAckPackage_Helper(UnknownPackage ack) {
-		// style line, draw arrows
+	private void drawAckPackage_Helper(OutsidePackage ack) {
         stroke(3);
-        fill(Color.GREEN.getRGB());
-        line(network.getTargetNode().getX(), network.getTargetNode().getY(), ack.getXTo(), ack.getYTo());
+        strokeWeight(2);
+        
+        for (int i = 0; i <= 25; i++) {
+          float x = lerp((float)network.getTargetNode().getX(), (float)ack.getXTo(), (float)i/25);
+          float y = lerp((float)network.getTargetNode().getY(), (float)ack.getYTo(), (float)i/25);
+          point(x, y);
+        }
+        
+        PImage img = loadImage("ackUnkown.png");
+        image(img, ack.getXTo()-10, ack.getYTo()-13, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+        
+        PFont font = loadFont("coder-15.vlw");
+		textFont(font);
+		
+		fill(0);
+		text("IP:?", ack.getXTo() + PIXEL_RANGE_NODE/2 - 5 , ack.getYTo()-5);
 	}
 	
 	private void drawAllTravellingPackages() {
@@ -410,6 +433,42 @@ public class ProcessingSimulation extends PApplet{
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 	}
 	
+	private void drawAckUnknown(Package pack) {
+		int borderXTop = mostRightDown.getX();
+		float yFromArrow = network.getTargetNode().getY();
+		float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
+		yToArrow += 20;
+		
+		Random random = new Random();
+		int MAX = borderXTop;
+		int MIN = borderXTop - 150;
+		
+		//Y: ako su suvise blizu generise koordinate, onda u while generise opet - da bi se lepo videle razlike
+		float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		if (prevRandomY == 0) prevRandomY = (int)randomY;
+		else {
+			while (Math.abs(prevRandomY - randomY) < (yFromArrow - yToArrow)/2)
+				randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		}
+		prevRandomY = (int)randomY;
+		
+		//X: ako su suvise blizu generise koordinate, onda u while generise opet - da bi se lepo videle razlike
+		float randomX = random.nextInt(MAX - MIN) + MIN;
+		if (prevRandomX == 0) prevRandomX = (int)randomX;
+		else {
+			while (Math.abs(prevRandomX - randomX) < (MAX - MIN) / 3)
+				randomX = random.nextInt(MAX - MIN) + MIN;
+		}
+		prevRandomX = (int)randomX;
+		
+		OutsidePackage unknown = new OutsidePackage(pack.getEdge().getNodeTo(), randomX, randomY);
+		
+		long currSec = System.currentTimeMillis()/1000;
+		unknown.setTimeCreated(currSec);
+		
+		ackPackages.add(unknown);
+	}
+	
 	private void drawPackage(Package pack) {
 		
 		if (!(pack.packageReceived())) {
@@ -426,28 +485,11 @@ public class ProcessingSimulation extends PApplet{
 					addPackageToQueue(newPack);
 				}
 			}
-			
-			// spoofed ip address
+		
 			if (DDoSSimulation.globalGraphTypeU60) {
 				Node retNode = network.getTargetNode().processPackage(pack);
-				
-				if (retNode == null) {
-					int borderXTop = mostRightDown.getX();
-					int borderYTop = mostRightDown.getY();
-					float yFromArrow = network.getTargetNode().getY();
-					
-					float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
-					
-					Random random = new Random();
-					float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
-					
-					UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
-					
-					long currSec = System.currentTimeMillis()/1000;
-					unknown.setTimeCreated(currSec);
-					
-					ackPackages.add(unknown);
-				}
+			
+				if (retNode == null) drawAckUnknown(pack);	// spoofed ip 
 			}
 		}
 	}
