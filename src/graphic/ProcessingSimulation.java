@@ -381,8 +381,8 @@ public class ProcessingSimulation extends PApplet{
 			PImage img;
 			if (pack.getType() == Package.EMAIL_VIRUS)  
 				img = loadImage("email2.png");
-			else if (pack.getType() == Package.CYN_PACKAGE)
-				img = loadImage("spoofedPackage.png");
+			else if (pack.getType() == Package.CYN_PACKAGE && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
+				img = loadImage("toTarget.png");
 			else 
 				img = loadImage("spoofedPackage.png");
 			
@@ -691,7 +691,7 @@ public class ProcessingSimulation extends PApplet{
 	}
 
 	public void makeInternalReflectedUnder30() {
-		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/3;
+		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/7;
 		int toFill = masters % MAX_MASTERS_U30;
 		int linePixel = masters / MAX_MASTERS_U30 * Y_STEP_U30;
 		
@@ -713,8 +713,8 @@ public class ProcessingSimulation extends PApplet{
 			makeReflectorAndAddToNetwork(leftStart, X, Y, 350);
 			makeReflectorAndAddToNetwork(leftStart, X+70, Y, 350);
 			
-			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%3 > 0)) {
-				for (int j=0; j<DDoSSimulation.globalNumSlaves%3; j++) {
+			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%7 > 0)) {
+				for (int j=0; j<DDoSSimulation.globalNumSlaves%7; j++) {
 					if (j%2 == 0) makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+70+100*((j+2)/2), Y, 100);
 					else makeReflectorAndAddToNetwork(leftStart, X+70+100*((j+2)/2), Y, 350);
 				}
@@ -726,13 +726,9 @@ public class ProcessingSimulation extends PApplet{
 		Vector<Node> slaves = network.getSlaveNodes();
 		
 		for(Node reflector: reflectors) {
-			for(int i =0; i<7; i++) {
-				
-				Random rand = new Random();
-				int slaveIndex = rand.nextInt(slaves.size());
-				Node nodeSlave = slaves.get(slaveIndex);
-				makeNeighbours(nodeSlave, reflector);
-				nodeSlave.addSlave(reflector); //not sure if this should stay
+			for(Node slave: slaves) {
+				makeNeighbours(slave, reflector);
+				slave.addSlave(reflector); //not sure if this should stay
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}

@@ -23,8 +23,8 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = false;
-	public static int globalNumSlaves = 100, globalNumMasterSlaves = 10;
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = true;
+	public static int globalNumSlaves = 35, globalNumMasterSlaves = 10;
 	public static int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
@@ -45,11 +45,11 @@ public class DDoSSimulation {
 	
 	
 	public DDoSSimulation() {
-		//makePopUpStart();
-		makeWindow();
+		makePopUpStart();
+		//makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.makeNetworkDefault();
-		runSimulation();
+		//procGraphic.makeNetworkDefault();
+		//runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -95,7 +95,7 @@ public class DDoSSimulation {
 		packageType.add(other);			// --> UPDATE
 		startingPanel.add(packageType, BorderLayout.SOUTH);
 		
-		JPanel numberSlaves = new JPanel();
+	/*	JPanel numberSlaves = new JPanel();
 		numberSlaves.setBorder(BorderFactory.createTitledBorder("Number of slaves"));
 		ButtonGroup slavesG = new ButtonGroup();
 		JRadioButton under45 = new JRadioButton("REAL SIM- under 60");
@@ -105,7 +105,7 @@ public class DDoSSimulation {
 		slavesG.add(above45);			
 		numberSlaves.add(under45);				
 		numberSlaves.add(above45);			
-		startingPanel.add(numberSlaves);
+		startingPanel.add(numberSlaves); */
 		
 		JButton confirm = new JButton("START");
 		buttonPanel.add(confirm);
@@ -121,7 +121,7 @@ public class DDoSSimulation {
 				globalResourceTypeInternal = internalResources.isSelected();
 				globalDDOSTypeDirect = direct.isSelected();
 				globalPackageTypeCYN = cyn.isSelected();
-				globalGraphTypeU45 = under45.isSelected();
+				//globalGraphTypeU45 = under45.isSelected();
 				
 				makeWindow();
 			}
@@ -129,7 +129,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		//popUpStart.setVisible(false);
+		popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -158,13 +158,12 @@ public class DDoSSimulation {
 		ttlTF = new JTextField(15);				JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
-		numMastersTF = new JTextField(15);		JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
+												JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
 												JTextField dummy12 = new JTextField(10);	dummy12.setVisible(false);
 		
-		cSlavesConfig.add(new JLabel("Number of masters:"));	cSlavesConfig.add(numMastersTF); 	cSlavesConfig.add(dummy12);										
 		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
 		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
-		cSlavesConfig.add(new JLabel("Memory in time:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
+		cSlavesConfig.add(new JLabel("Time in memory:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
 		cSlavesConfig.add(new JLabel("Package size: "));		cSlavesConfig.add(packagesizeTF); 	cSlavesConfig.add(dummy10);
 																									
 		JButton submitConfiguration = new JButton("Configure");					
@@ -318,17 +317,18 @@ public class DDoSSimulation {
 							//-> 1. default way | 2. from document	| 3. typing
 		submitConfiguration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				globalNumMasterSlaves = Integer.parseInt(numMastersTF.getText());
+				
 				globalNumSlaves = Integer.parseInt(numSlavesTF.getText());
 				ttlConf = Integer.parseInt(ttlTF.getText());
 				memoryConf = Integer.parseInt(memoryTF.getText());
 				packageConf = Integer.parseInt(packagesizeTF.getText());
 				
-				numMastersTF.setEditable(false);
 				numSlavesTF.setEditable(false);
 				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
+				
+				globalGraphTypeU45 = globalDDOSTypeDirect? (globalNumSlaves <= 45 ? true : false ) : (globalNumSlaves <= 35 ? true : false);
 				
 				submitConfiguration.setEnabled(false);
 				makeIPAddressConfigWindow();
