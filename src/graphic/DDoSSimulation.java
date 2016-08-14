@@ -24,7 +24,7 @@ public class DDoSSimulation {
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
 	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = false;
-	public static int globalNumSlaves = 57, globalNumMasterSlaves = 10;
+	public static int globalNumSlaves = 100, globalNumMasterSlaves = 10;
 	public static int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
@@ -45,11 +45,11 @@ public class DDoSSimulation {
 	
 	
 	public DDoSSimulation() {
-		makePopUpStart();
-		//makeWindow();
+		//makePopUpStart();
+		makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		//procGraphic.makeNetworkDefault();
-		//runSimulation();
+		procGraphic.makeNetworkDefault();
+		runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -129,7 +129,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		popUpStart.setVisible(false);
+		//popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 

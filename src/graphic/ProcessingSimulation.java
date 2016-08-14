@@ -15,24 +15,28 @@ public class ProcessingSimulation extends PApplet{
 	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_ALL_INFECTED = 3, STAGE_ATTACKING = 4,
 							 STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
 	public static final int X_STEP_U30 = 200, Y_STEP_U30 = 70;
-	public static final int TIMER_ACK_PROCESSING = 2;
+	public static final int TIMER_ACK_PROCESSING = 1000;
 	
 	public static int speedUp = 1;
 	public static int stageBeforePause = 2;
 	public static int infected = 0;
+	public static int lastInfected = 0;
+	public static int numPacksToRelease = 1;
 	
-	private long lastPackageWave = 0;
+	private long lastMSWave = 0, lastSRWave = 0, lastToTargetWave, lastVirusWave;
 	private Network network;
 	private DDoSSimulation GUIcontrol;
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
+	private int prevRandomX = 0, prevRandomY = 0;
 	private PImage networkBackground;
 	private boolean newImageToLoad = false, firstImageLoad = false;
-	private float angleTargetMemory = 0;
 	private Node mostRightDown;
-	private List<Package> packageQueue = new LinkedList<Package>();
+	private List<Package> virusPackageQueue = new LinkedList<Package>();
 	private List<Package> MSPackageQueue = new LinkedList<Package>();
+	private List<Package> SRPackageQueue = new LinkedList<Package>();
+	private List<Package> toTargetPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
-	private Set<UnknownPackage> ackPackages = new HashSet<UnknownPackage>();
+	private Set<OutsidePackage> ackPackages = new HashSet<OutsidePackage>();
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
 		this.GUIcontrol = DDosGui;
@@ -50,7 +54,7 @@ public class ProcessingSimulation extends PApplet{
 	
 	public void infectSlaves() { 
 		stage = ProcessingSimulation.STAGE_INFECTING_VIRUS;
-		network.infectSlaves();
+		network.infectMasterZombies();
 		GUIcontrol.updateLastInputTerminal();
 	}
 	
@@ -157,22 +161,36 @@ public class ProcessingSimulation extends PApplet{
 				text(n.getID(), n.getX()-15, n.getY()-5);
 			}
 		}
-		saveFrame("data/initalNetwork.png");
-	}
-
-	private void update() {
-		angleTargetMemory = (network.getTagetLeftPercent())*360;
 		
-		refreshPackageQueue();
-		refreshMSPackageQueue();
+		//drawing user icon
+		PImage imgUser = loadImage("user.png");
+		image(imgUser, APPLET_WIDTH - 100, network.getTargetNode().getY()-40, 70, 70); 
+		saveFrame("data/initalNetwork.png");
+		newImageToLoad = true;
+	}
+	
+	private void update() {
+		
+		lastMSWave = refreshPackageQueue(MSPackageQueue, 2, lastMSWave, 1000);
+		if (!DDoSSimulation.globalDDOSTypeDirect) lastSRWave = refreshPackageQueue(SRPackageQueue, 3, lastSRWave, 1000);
+		lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, 1, lastToTargetWave, 500);
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
+			
+			lastVirusWave = refreshPackageQueue(virusPackageQueue, 3, lastVirusWave, 1000);
+			
+			if (lastInfected != infected) {
+				lastInfected = infected;
+				drawNetworkBegining();
+				newImageToLoad = true;
+				saveFrame("data/initalNetwork.png");
+			}
 			
 			//wait for all slaves to be infected by virus
 			if (infected == DDoSSimulation.globalNumMasterSlaves) {
 				infected = 0;
 				drawNetworkBegining();
-				saveFrame("data/initalNetwork.png");
+				//saveFrame("data/initalNetwork.png");
 				JTextArea terminal = getTerminal();
 				terminal.append("\n>Infecting done... \n>");
 				GUIcontrol.updateLastInputTerminal();
@@ -183,25 +201,15 @@ public class ProcessingSimulation extends PApplet{
 			}
 		} else if (stage == ProcessingSimulation.STAGE_GEN) {
 			generateCYNpackages();
+			//generateCYNpackages();
 			stage = ProcessingSimulation.STAGE_ATTACKING;
 		}
 	}
 	
 	private void generateCYNpackages() {
-		long currSec = System.currentTimeMillis()/1000;
 		
-		if (!DDoSSimulation.globalGraphTypeU45) {
-			network.sendFromAllMasters(Package.CYN_PACKAGE);
-		}
-		else {
-			if (lastPackageWave == 0) {
-				lastPackageWave = currSec;
-				network.sendFromAllSlaves(Package.CYN_PACKAGE);
-			} else if ((currSec - lastPackageWave) >= 4) {  
-				lastPackageWave = currSec;
-				network.sendFromAllSlaves(Package.CYN_PACKAGE);
-			}
-		}
+		network.sendFromAllMasters(Package.CYN_PACKAGE);
+		
 	}
 	
 	public void draw() {
@@ -229,84 +237,75 @@ public class ProcessingSimulation extends PApplet{
 				drawAllTravellingPackages();
 				drawAllAckPackages(); 
 			}
-			drawMemoryInfoCircle(angleTargetMemory);
+			drawMemoryInfoBar();
 			
 			if (network.getTargetNode().getComputer().isMemoryFull())
 				stage = ProcessingSimulation.STAGE_FINISHED;
 		}
 	}
 	
-	private void drawMemoryInfoCircle(float angleTargetMemory) {
+	private void drawMemoryInfoBar() {
+		float targetMemory = network.getTagetLeftPercent() * 100;
 		Color color = null;
-		if ((angleTargetMemory/36)*10 < 30) color = Color.GREEN;
-		else if ((angleTargetMemory/36)*10 > 30 && (angleTargetMemory/36)*10 < 60) color = Color.ORANGE;
+		PFont font = loadFont("coder-15.vlw");
+		textFont(font);
+		
+		if ((targetMemory) < 30) color = Color.GREEN;
+		else if ((targetMemory) > 30 && (targetMemory) < 60) color = Color.ORANGE;
 		else color = Color.RED;
 		
-		if (angleTargetMemory > 0) {
-			noStroke();
-			fill(color.getRGB(), 51);
-			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 200, 200, 0, radians(angleTargetMemory));
+		int x = network.getTargetNode().getX();
+		int y = network.getTargetNode().getY();
+		
+		fill(0);
+		text("TARGET MEMORY:", 25, y + 17);
 			
-			noStroke();
-			fill(255);
-			arc(APPLET_WIDTH - 200, APPLET_HEIGHT - 150, 100, 100, 0, radians(360));
+		stroke(0);
+		fill(255);
+		strokeWeight(1);
+		rect(150, y-5, x-150-50, 35);
 			
-			PFont font = loadFont("coder-15.vlw");
-			textFont(font);
-			fill(0);
-			text((angleTargetMemory/36)*10+"%", APPLET_WIDTH - 230, APPLET_HEIGHT - 150);
-		}
+		noStroke();
+		fill(color.getRGB(), 127);
+		rect(x - 50, y, -targetMemory*4, 25);
+			
+		fill(0);
+		text(targetMemory+"%", x - 120, y + 15);
 	}
 	
-	private void refreshPackageQueue() {
-		long currSec = System.currentTimeMillis()/1000;
 		
-		Package head = null;
-		if (packageQueue.size() > 0)
-			head = packageQueue.get(0);
-		
-		while (head != null && head.getTimeStartSending() <= currSec && head.getStatus() == Package.WAITING) {
-			head.setStatus(Package.TRAVELING);
-			travellingPackages.add(head);
-			Edge edge = head.getEdge();
-			edge.startSendingPackage(head);
-			edge.writeSendingStart(head, getTerminal());
-			GUIcontrol.updateLastInputTerminal();
-			packageQueue.remove(0);
+	private long refreshPackageQueue(List<Package> packageQueue, int numPacks, long lastWave, long sec) {
+		long currSec = System.currentTimeMillis();
+		if (lastWave == 0 || (currSec-lastWave) >= sec ) {
+			Package head = null;
 			if (packageQueue.size() > 0)
 				head = packageQueue.get(0);
-			else
-				head = null;
-		}
-	}
-	
-	private void refreshMSPackageQueue() {
-		long currSec = System.currentTimeMillis()/1000;
-		
-		Package head = null;
-		if (MSPackageQueue.size() > 0)
-			head = MSPackageQueue.get(0);
-		
-		while (head != null && head.getTimeStartSending() <= currSec && head.getStatus() == Package.WAITING) {
-			head.setStatus(Package.TRAVELING);
-			travellingPackages.add(head);
-			Edge edge = head.getEdge();
-			edge.startSendingPackage(head);
-			edge.writeSendingStart(head, getTerminal());
-			GUIcontrol.updateLastInputTerminal();
-			MSPackageQueue.remove(0);
-			if (MSPackageQueue.size() > 0)
-				head = MSPackageQueue.get(0);
-			else
-				head = null;
-		}
+			
+			int numReleasedPacks = 0;
+			while (head != null && (numReleasedPacks < numPacks)) {
+				head.setStatus(Package.TRAVELING);
+				travellingPackages.add(head);
+				Edge edge = head.getEdge();
+				edge.startSendingPackage(head);
+				edge.writeSendingStart(head, getTerminal());
+				GUIcontrol.updateLastInputTerminal();
+				packageQueue.remove(0);
+				if (packageQueue.size() > 0)
+					head = packageQueue.get(0);
+				else
+					head = null;
+				numReleasedPacks++;
+			}
+			return currSec;
+		}	
+		else return lastWave;
 	}
 	
 	private void drawAllAckPackages() {
-		long currSec = System.currentTimeMillis()/1000;
-		Set<UnknownPackage> newAckPackages = new HashSet<UnknownPackage>();
+		long currSec = System.currentTimeMillis();
+		Set<OutsidePackage> newAckPackages = new HashSet<OutsidePackage>();
 		
-		for (UnknownPackage ack: ackPackages)
+		for (OutsidePackage ack: ackPackages)
 			if (currSec - ack.getTimeCreated() < TIMER_ACK_PROCESSING) {
 				newAckPackages.add(ack);
 				drawAckPackage_Helper(ack);
@@ -315,11 +314,24 @@ public class ProcessingSimulation extends PApplet{
 		ackPackages = newAckPackages;
 	}
 	
-	private void drawAckPackage_Helper(UnknownPackage ack) {
-		// style line, draw arrows
+	private void drawAckPackage_Helper(OutsidePackage ack) {
         stroke(3);
-        fill(Color.GREEN.getRGB());
-        line(network.getTargetNode().getX(), network.getTargetNode().getY(), ack.getXTo(), ack.getYTo());
+        strokeWeight(2);
+        
+        for (int i = 0; i <= 25; i++) {
+          float x = lerp((float)network.getTargetNode().getX(), (float)ack.getXTo(), (float)i/25);
+          float y = lerp((float)network.getTargetNode().getY(), (float)ack.getYTo(), (float)i/25);
+          point(x, y);
+        }
+        
+        PImage img = loadImage("ackUnkown.png");
+        image(img, ack.getXTo()-10, ack.getYTo()-13, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+        
+        PFont font = loadFont("coder-15.vlw");
+		textFont(font);
+		
+		fill(0);
+		text("IP:?", ack.getXTo() + PIXEL_RANGE_NODE/2 - 5 , ack.getYTo()-5);
 	}
 	
 	private void drawAllTravellingPackages() {
@@ -341,7 +353,7 @@ public class ProcessingSimulation extends PApplet{
 		float x = pack.getX();
 		float y = pack.getY();
 		
-		//if (travellingPackages.size()/10 > 0) speedUp = speedUp * travellingPackages.size()/10;
+		if (!DDoSSimulation.globalGraphTypeU45) speedUp *= 1;
 		
 		float speedX = 0;
 		float speedY = 1;
@@ -383,12 +395,48 @@ public class ProcessingSimulation extends PApplet{
 		Edge e = pack.getEdge();
 		
 		stroke(255,0,0);
-		strokeWeight(3);
+		strokeWeight(4);
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
 		
 		stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
 		strokeWeight(1);
 		line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
+	}
+	
+	private void drawAckUnknown(Package pack) {
+		int borderXTop = mostRightDown.getX();
+		float yFromArrow = network.getTargetNode().getY();
+		float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
+		yToArrow += 20;
+		
+		Random random = new Random();
+		int MAX = borderXTop;
+		int MIN = borderXTop - 150;
+		
+		//Y: ako su suvise blizu generise koordinate, onda u while generise opet - da bi se lepo videle razlike
+		float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		if (prevRandomY == 0) prevRandomY = (int)randomY;
+		else {
+			while (Math.abs(prevRandomY - randomY) < (yFromArrow - yToArrow)/2)
+				randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
+		}
+		prevRandomY = (int)randomY;
+		
+		//X: ako su suvise blizu generise koordinate, onda u while generise opet - da bi se lepo videle razlike
+		float randomX = random.nextInt(MAX - MIN) + MIN;
+		if (prevRandomX == 0) prevRandomX = (int)randomX;
+		else {
+			while (Math.abs(prevRandomX - randomX) < (MAX - MIN) / 3)
+				randomX = random.nextInt(MAX - MIN) + MIN;
+		}
+		prevRandomX = (int)randomX;
+		
+		OutsidePackage unknown = new OutsidePackage(pack.getEdge().getNodeTo(), randomX, randomY);
+		
+		long currSec = System.currentTimeMillis();
+		unknown.setTimeCreated(currSec);
+		
+		ackPackages.add(unknown);
 	}
 	
 	private void drawPackage(Package pack) {
@@ -398,32 +446,15 @@ public class ProcessingSimulation extends PApplet{
 		}
 		// package is received - increase target memory, make ACK package, prepare ACK package for drawing
 		else{
-			pack.getEdge().getNodeTo().processPackage(pack);
+			Node retNode = pack.getEdge().getNodeTo().processPackage(pack);
 			if (pack.getType() == Package.CYN_PACKAGE) {	
-		
-				// spoofed ip address
-				if (DDoSSimulation.globalGraphTypeU45) {
-					Node retNode = network.getTargetNode().processPackage(pack);
 					
-					if (retNode == null) {
-						int borderXTop = mostRightDown.getX();
-						int borderYTop = mostRightDown.getY();
-						float yFromArrow = network.getTargetNode().getY();
-						
-						float yToArrow = mostRightDown.getY() + ( network.getTargetNode().getY() - mostRightDown.getY() ) / 4 ;
-						
-						Random random = new Random();
-						float randomY = random.nextInt((int)yFromArrow - (int)yToArrow + 1) + (int)yToArrow;
-						
-						UnknownPackage unknown = new UnknownPackage(pack.getEdge().getNodeTo(), borderXTop, randomY);
-						
-						long currSec = System.currentTimeMillis()/1000;
-						unknown.setTimeCreated(currSec);
-						
-						ackPackages.add(unknown);
-					}
-				}
-			}
+			//	if (DDoSSimulation.globalGraphTypeU45) {
+			
+					if ((retNode == null) && (pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)) drawAckUnknown(pack);	// spoofed ip 
+	
+			//	}
+			 }
 		}
 	}
 	
@@ -436,9 +467,23 @@ public class ProcessingSimulation extends PApplet{
 		saveFrame("data/initalNetwork.png");
 	}
 	
-	public void addPackageToQueue(Package pack) { packageQueue.add(pack); }
+	public void addPackageToQueue(Package pack) { 
+		
+		if (pack.getType() == Package.EMAIL_VIRUS)
+			virusPackageQueue.add(pack); 
+		else {
+			int typeFrom = pack.getEdge().getNodeFrom().getComputer().getType();
+			
+			if (typeFrom == Computer.MASTER_SLAVE)	MSPackageQueue.add(pack);
+			else if (typeFrom == Computer.REFLECTING) toTargetPackageQueue.add(pack);
+			else {
+				if (DDoSSimulation.globalDDOSTypeDirect) toTargetPackageQueue.add(pack);
+				else SRPackageQueue.add(pack);
+			}
+		}
+		
+	}
 	
-	public void addPackageToMSQueue(Package pack) { MSPackageQueue.add(pack); }
 	
 	public void makeNetworkDefault() { 
 		network = new Network(this);
@@ -517,7 +562,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
-		
+		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 	
 	public void makeInternalDirectAbove50() {
@@ -547,6 +592,7 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 		}		
+		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 	
 	private void makeNeighbours(Node from, Node to) {
@@ -641,7 +687,7 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 		}
-		mostRightDown = network.getNodeByID(2 + DDoSSimulation.globalNumSlaves);
+		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 
 	public void makeInternalReflectedUnder30() {
@@ -690,6 +736,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
+		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 	
 	public void startDDos() { stage = ProcessingSimulation.STAGE_GEN; }
@@ -709,12 +756,14 @@ public class ProcessingSimulation extends PApplet{
 	
 	public boolean isPaused() { return stage == STAGE_PAUSE; }
 	
+	public void shuffleMS() { Collections.shuffle(MSPackageQueue); }
+	
 	public void newInfected(Package virus) {
 		
 		drawNetworkBegining();
 		infected++;
-		saveFrame("data/initalNetwork.png");
-		newImageToLoad = true;
+		//saveFrame("data/initalNetwork.png");
+		//newImageToLoad = true;
 				
 	}
 }
