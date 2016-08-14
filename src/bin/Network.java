@@ -74,7 +74,7 @@ public class Network {
 		return null;
 	}
 
-	public void infectSlaves() {
+	public void infectMasterZombies() {
 		//making all email virus packages and preparing them to be drawn
 		int inc = 1;
 		for(Edge e: allEdges) {
@@ -83,10 +83,9 @@ public class Network {
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
-				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
+				procSim.addPackageToQueue(pack);
 				
-				//e.getNodeFrom().getComputer().addSentPackage(pack);
 			}
 		}
 	}
@@ -103,7 +102,6 @@ public class Network {
 				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
 				
-				//n.getComputer().addSentPackage(pack);
 			}
 		}
 	}
@@ -117,12 +115,13 @@ public class Network {
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
-				procSim.addPackageToMSQueue(pack);
+				procSim.addPackageToQueue(pack);
 				pack.setStatus(Package.WAITING);
 				
-				//n.getComputer().addSentPackage(pack);
 			}
 		}
+		procSim.shuffleMS();
+		
 	}
 	
 	public float getTagetLeftPercent() {

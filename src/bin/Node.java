@@ -58,7 +58,7 @@ public class Node {
 	
 	public Color getColor () {return color;}
 	
-	public Package sendFromSlaveDirect(int packageType) {
+	public Package attackTarget(int packageType) {
 		Edge e = network.getEdge(this, network.getTargetNode());
 		Package pack = new Package(e, 32, packageType);
 		// for faster simulation -> instead of seconds use milliseconds !
@@ -80,8 +80,8 @@ public class Node {
 		
 		switch (pack.getType()) {
 			case Package.EMAIL_VIRUS :  processVirus(pack); return null;
-			case Package.CYN_PACKAGE: ; return processCYNpackage(pack);
-			case Package.ICMP_PACKAGE: ; return processICMPpackage(pack);
+			case Package.CYN_PACKAGE: return processCYNpackage(pack);
+			case Package.ICMP_PACKAGE: return processICMPpackage(pack);
 			default: return null;
 		}
 		
@@ -91,7 +91,7 @@ public class Node {
 	private void processVirus(Package virus) {
 		
 		infected = true;
-		network.getProcSim().newInfected(virus);
+		network.getProcSim().infected++;
 		
 	}
 	
@@ -99,7 +99,7 @@ public class Node {
 		if (computer.getType() == Computer.SLAVE) {
 			
 			if (DDoSSimulation.globalDDOSTypeDirect) { //slave sends new package to target direct 
-				Package newPack = sendFromSlaveDirect(pack.getType());
+				Package newPack = attackTarget(pack.getType());
 				network.getProcSim().addPackageToQueue(newPack);
 			}
 			else { 										//slave sends to reflecting nodes
