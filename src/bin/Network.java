@@ -67,6 +67,17 @@ public class Network {
 		return null;
 	}
 	
+	public Set<Edge> getAllReflectorEdges(Node from) {
+		
+		Set<Edge> allReflectedEdges = new HashSet<Edge>();
+		
+		for(Edge e: allEdges)
+			if (e.getNodeFrom().equals(from))
+				allReflectedEdges.add(e);
+		
+		return allReflectedEdges;
+	}
+	
 	public Node getSlaveById(int id) { 
 		for (Node n: allNodes)
 			if (n.getID() == id) return n;

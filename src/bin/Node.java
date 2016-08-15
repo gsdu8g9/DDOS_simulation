@@ -61,12 +61,24 @@ public class Node {
 	public Package attackTarget(int packageType) {
 		Edge e = network.getEdge(this, network.getTargetNode());
 		Package pack = new Package(e, 32, packageType);
-		// for faster simulation -> instead of seconds use milliseconds !
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setTimeStartSending(currSec);
 		pack.setStatus(Package.WAITING);
 		
 		return pack;
+	}
+	
+	public Set<Package> attackReflector(int packageType) {
+		Set<Edge> allReflected = network.getAllReflectorEdges(this);
+		Set<Package> retSet = new HashSet<Package>();
+		for(Edge e: allReflected) {
+			Package pack = new Package(e, 32, packageType);
+			long currSec = System.currentTimeMillis()/1000;
+			pack.setTimeStartSending(currSec);
+			pack.setStatus(Package.WAITING);
+			retSet.add(pack);
+		}
+		return retSet;
 	}
 	
 	public Node processPackage(Package pack) {
@@ -89,21 +101,20 @@ public class Node {
 	}
 	
 	private void processVirus(Package virus) {
-		
 		infected = true;
 		network.getProcSim().infected++;
-		
 	}
 	
 	private Node processCYNpackage(Package pack) {
 		if (computer.getType() == Computer.SLAVE) {
-			
 			if (DDoSSimulation.globalDDOSTypeDirect) { //slave sends new package to target direct 
 				Package newPack = attackTarget(pack.getType());
 				network.getProcSim().addPackageToQueue(newPack);
 			}
 			else { 										//slave sends to reflecting nodes
-				
+				Set<Package> newPackages = attackReflector(pack.getType());
+				for(Package p: newPackages)
+					network.getProcSim().addPackageToQueue(p);
 			}
 			return null;	
 		}
@@ -111,6 +122,10 @@ public class Node {
 			Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
 			computer.increaseMemory(pack.getSize());
 			return retAckNode;
+		} 
+		else if (computer.getType() == Computer.REFLECTING) {
+			Package newPack = attackTarget(pack.getType());
+			network.getProcSim().addPackageToQueue(newPack);
 		}
 		return null;
 	}
@@ -118,6 +133,5 @@ public class Node {
 	private Node processICMPpackage(Package pack) {
 		return null;
 	}
-
 	
 }

@@ -8,9 +8,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Set;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import bin.*;
 import bin.Package;
 import javafx.scene.layout.Border;
@@ -24,7 +28,7 @@ public class DDoSSimulation {
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
 	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = true;
-	public static int globalNumSlaves = 35, globalNumMasterSlaves = 10;
+	public static int globalNumSlaves = 33, globalNumMasterSlaves = 10;
 	public static int ttlConf = 4, memoryConf = 0, packageConf = 32;
 	
 	private JFrame window, popUpStart, ipAddressConfig;
@@ -43,13 +47,12 @@ public class DDoSSimulation {
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
 	
-	
 	public DDoSSimulation() {
-		makePopUpStart();
-		//makeWindow();
+		//makePopUpStart();
+		makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		//procGraphic.makeNetworkDefault();
-		//runSimulation();
+		procGraphic.makeNetworkDefault();
+		runSimulation();
 	}
 	
 	private void makePopUpStart() {
@@ -129,7 +132,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		popUpStart.setVisible(false);
+		//popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -170,25 +173,68 @@ public class DDoSSimulation {
 		cSlavesConfig.add(dummy11);
 		cSlavesConfig.add(submitConfiguration);
 		
-		
-		//********************************88
-		JPanel cAttackOptions = new JPanel(new GridLayout(3,1,3,3));
+		//********************************************************************************
+		JPanel cTwoPanels = new JPanel(new GridLayout(6,1,5,5));
+		JPanel cAttackOptions = new JPanel(new GridLayout(1,3,3,3));
 		cAttackOptions.setBorder(BorderFactory.createTitledBorder("DDOS Attack options"));
 		
-		JButton startInfectingMasters = new JButton("Start infecting master zombies");
+		JButton startInfectingMasters = new JButton("INFECT ZOMBIES");
 		cAttackOptions.add(startInfectingMasters);
 		
-		startDDoS = new JButton("Start DDOS attack");
+		startDDoS = new JButton("START DDOS");
 		startDDoS.setEnabled(false);
 		cAttackOptions.add(startDDoS);
 		
-		JButton pausePlay = new JButton("Pause/Play simulation");
+		JButton pausePlay = new JButton("PAUSE/PLAY");
 		pausePlay.setEnabled(false);
 		cAttackOptions.add(pausePlay);
-		//**************************************88
+		cTwoPanels.add(cAttackOptions);
+		//***********************************************************************************
+		JPanel cspeedBar = new JPanel(new GridLayout(1,1,3,3));
+		cspeedBar.setBorder(BorderFactory.createTitledBorder("Speed"));
+		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 0, 30, 10);
+		
+		speedBar.setMajorTickSpacing(10);
+		//speedBar.setMinorTickSpacing(10);
+		speedBar.setPaintTicks(true);
+		
+		//Create the label table
+		Hashtable labelTable = new Hashtable();
+		labelTable.put( new Integer(0), new JLabel("SLOW") );
+		labelTable.put( new Integer(10), new JLabel("NORMAL") );
+		labelTable.put( new Integer(20), new JLabel("FAST") );
+		labelTable.put( new Integer(30), new JLabel("ULTRA") );
+		speedBar.setLabelTable(labelTable);
+		speedBar.setPaintLabels(true);
+		
+		speedBar.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+		
+		    JSlider source = (JSlider)e.getSource();
+		    if (!source.getValueIsAdjusting()) {
+		        int fps = (int)source.getValue();
+		        if (fps == 0) ProcessingSimulation.speedUp = 3;
+		        else if (fps == 10) ProcessingSimulation.speedUp = 7;
+		        else if (fps == 20) ProcessingSimulation.speedUp = 10;
+		        else if (fps == 30) ProcessingSimulation.speedUp = 15;
+		    }
+			}
+
+			});
+		
+		cspeedBar.add(speedBar);
+		cTwoPanels.add(cspeedBar);
+		// ***************************************************************
+		//for now dummy panel, just to fill space
+		JPanel d1 = new JPanel(new GridLayout(3,1,5,5));
+		JTextField d2 = new JTextField(10);		d2.setVisible(false);	d1.add(d2);
+		JTextField d3 = new JTextField(10);		d3.setVisible(false);	d1.add(d3);
+		JTextField d4 = new JTextField(10);		d4.setVisible(false);	d1.add(d4);
 		
 		configurePanel.add(cSlavesConfig, BorderLayout.NORTH);
-		configurePanel.add(cAttackOptions, BorderLayout.CENTER);
+		configurePanel.add(cTwoPanels, BorderLayout.CENTER);
+		configurePanel.add(d1, BorderLayout.SOUTH);
 		
 		// details panel -------------------------------------------------------------------------------
 		detailsPanel = new JPanel(new GridLayout(6, 3, 3, 3));

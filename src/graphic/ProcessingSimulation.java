@@ -172,7 +172,10 @@ public class ProcessingSimulation extends PApplet{
 	private void update() {
 		
 		lastMSWave = refreshPackageQueue(MSPackageQueue, 2, lastMSWave, 1000);
-		if (!DDoSSimulation.globalDDOSTypeDirect) lastSRWave = refreshPackageQueue(SRPackageQueue, 3, lastSRWave, 1000);
+		if (!DDoSSimulation.globalDDOSTypeDirect) {
+			Collections.shuffle(SRPackageQueue);
+			lastSRWave = refreshPackageQueue(SRPackageQueue, 3, lastSRWave, 500);
+		}
 		lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, 1, lastToTargetWave, 500);
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
@@ -190,7 +193,6 @@ public class ProcessingSimulation extends PApplet{
 			if (infected == DDoSSimulation.globalNumMasterSlaves) {
 				infected = 0;
 				drawNetworkBegining();
-				//saveFrame("data/initalNetwork.png");
 				JTextArea terminal = getTerminal();
 				terminal.append("\n>Infecting done... \n>");
 				GUIcontrol.updateLastInputTerminal();
@@ -201,15 +203,12 @@ public class ProcessingSimulation extends PApplet{
 			}
 		} else if (stage == ProcessingSimulation.STAGE_GEN) {
 			generateCYNpackages();
-			//generateCYNpackages();
 			stage = ProcessingSimulation.STAGE_ATTACKING;
 		}
 	}
 	
 	private void generateCYNpackages() {
-		
 		network.sendFromAllMasters(Package.CYN_PACKAGE);
-		
 	}
 	
 	public void draw() {
@@ -273,7 +272,6 @@ public class ProcessingSimulation extends PApplet{
 		text(targetMemory+"%", x - 120, y + 15);
 	}
 	
-		
 	private long refreshPackageQueue(List<Package> packageQueue, int numPacks, long lastWave, long sec) {
 		long currSec = System.currentTimeMillis();
 		if (lastWave == 0 || (currSec-lastWave) >= sec ) {
@@ -310,7 +308,6 @@ public class ProcessingSimulation extends PApplet{
 				newAckPackages.add(ack);
 				drawAckPackage_Helper(ack);
 			}
-		
 		ackPackages = newAckPackages;
 	}
 	
@@ -375,18 +372,23 @@ public class ProcessingSimulation extends PApplet{
 		pack.setY(y);
 		
 		if (DDoSSimulation.globalGraphTypeU45) {
-			stroke(0);
-			fill(175);
-			
-			PImage img;
-			if (pack.getType() == Package.EMAIL_VIRUS)  
-				img = loadImage("email2.png");
-			else if (pack.getType() == Package.CYN_PACKAGE && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
-				img = loadImage("toTarget.png");
-			else 
-				img = loadImage("spoofedPackage.png");
-			
-			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+			if (DDoSSimulation.globalDDOSTypeDirect == true || 
+			   (pack.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER_SLAVE || 
+			    pack.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER)) {
+				stroke(0);
+				fill(175);
+				
+				PImage img;
+				if (pack.getType() == Package.EMAIL_VIRUS)  
+					img = loadImage("email2.png");
+				else if (pack.getType() == Package.CYN_PACKAGE && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
+					img = loadImage("toTarget.png");
+				else 
+					img = loadImage("spoofedPackage.png");
+				
+				image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+		}
+		else blinkEdges(pack);
 		}
 		else blinkEdges(pack);
 	}
@@ -444,17 +446,11 @@ public class ProcessingSimulation extends PApplet{
 		if (!(pack.packageReceived())) {
 			drawPackage_Helper(pack);
 		}
-		// package is received - increase target memory, make ACK package, prepare ACK package for drawing
-		else{
+		else {
 			Node retNode = pack.getEdge().getNodeTo().processPackage(pack);
 			if (pack.getType() == Package.CYN_PACKAGE) {	
-					
-			//	if (DDoSSimulation.globalGraphTypeU45) {
-			
-					if ((retNode == null) && (pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)) drawAckUnknown(pack);	// spoofed ip 
-	
-			//	}
-			 }
+				if ((retNode == null) && (pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)) drawAckUnknown(pack);	// spoofed ip 
+			}
 		}
 	}
 	
@@ -483,7 +479,6 @@ public class ProcessingSimulation extends PApplet{
 		}
 		
 	}
-	
 	
 	public void makeNetworkDefault() { 
 		network = new Network(this);
@@ -562,6 +557,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
+		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 	
@@ -592,7 +588,17 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 		}		
+		
+		Node mostRightDownPrev = null;
+		if (DDoSSimulation.globalNumSlaves % 10 != 0)
+			mostRightDownPrev = network.getNodeByID(DDoSSimulation.globalNumSlaves - DDoSSimulation.globalNumSlaves % 10);
+		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
+	
+		if (mostRightDownPrev != null) {
+			if (mostRightDown.getX() < mostRightDownPrev.getX())
+				mostRightDown = mostRightDownPrev;
+		}
 	}
 	
 	private void makeNeighbours(Node from, Node to) {
@@ -687,7 +693,15 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 		}
+		Node mostRightDownPrev = null;if (DDoSSimulation.globalNumSlaves % 10 != 0)
+			mostRightDownPrev = network.getNodeByID(DDoSSimulation.globalNumSlaves - DDoSSimulation.globalNumSlaves % 10);
+		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
+	
+		if (mostRightDownPrev != null) {
+			if (mostRightDown.getX() < mostRightDownPrev.getX())
+				mostRightDown = mostRightDownPrev;
+		}
 	}
 
 	public void makeInternalReflectedUnder30() {
@@ -732,6 +746,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
+		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 	}
 	
@@ -753,13 +768,4 @@ public class ProcessingSimulation extends PApplet{
 	public boolean isPaused() { return stage == STAGE_PAUSE; }
 	
 	public void shuffleMS() { Collections.shuffle(MSPackageQueue); }
-	
-	public void newInfected(Package virus) {
-		
-		drawNetworkBegining();
-		infected++;
-		//saveFrame("data/initalNetwork.png");
-		//newImageToLoad = true;
-				
-	}
 }
