@@ -1,15 +1,14 @@
 package graphic;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Font;
-import java.awt.*;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Set;
+import java.util.*;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -27,17 +26,23 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = true;
-	public static int globalNumSlaves = 33, globalNumMasterSlaves = 10;
-	public static int ttlConf = 4, memoryConf = 0, packageConf = 32;
-	
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeCYN = true, globalGraphTypeU45 = false;
+	public static int globalNumSlaves = 100, 
+					  globalNumMasterSlaves = 5;
+	public static int globalSpeedUpBar = 3,
+					  globalInMemTimeConf = 10, 		
+			          globalMemoryConf = 2048, 		
+			          globalPackageSizeConf = 32;
+	public static int globalGenPackagePerSec = 2;	// from masters - other we adjust according to this
+					 
 	private JFrame window, popUpStart, ipAddressConfig;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
+	
 	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel, computerDetailsPanel, userHelpPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
-	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF, numMastersTF; 
+	private JTextField numSlavesTF, memoryTF, packagesizeTF;
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal, packages_received_detail, packages_sent_detail;
 	private JButton startDDoS;
@@ -154,11 +159,11 @@ public class DDoSSimulation {
 		userHelpPanel = new JPanel(new BorderLayout());
 		
 		// configure tab -------------------------------------------------------------------------------
-		JPanel cSlavesConfig = new JPanel(new GridLayout(6,3,3,3));
+		JPanel cSlavesConfig = new JPanel(new GridLayout(5,3,3,3));
 		cSlavesConfig.setBorder(BorderFactory.createTitledBorder("Slaves configuration"));
 		
-		numSlavesTF = new JTextField(15);		JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);
-		ttlTF = new JTextField(15);				JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
+		numSlavesTF = new JTextField(15);		JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);			
+												JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
 												JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
@@ -166,7 +171,7 @@ public class DDoSSimulation {
 		
 		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
 		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
-		cSlavesConfig.add(new JLabel("Time in memory:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
+		//cSlavesConfig.add(new JLabel("Time in memory:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
 		cSlavesConfig.add(new JLabel("Package size: "));		cSlavesConfig.add(packagesizeTF); 	cSlavesConfig.add(dummy10);
 																									
 		JButton submitConfiguration = new JButton("Configure");					
@@ -188,43 +193,17 @@ public class DDoSSimulation {
 		JButton pausePlay = new JButton("PAUSE/PLAY");
 		pausePlay.setEnabled(false);
 		cAttackOptions.add(pausePlay);
+		
+		JButton ping = new JButton("PING");
+		cAttackOptions.add(ping);
+		ping.setBackground(Color.GREEN);
+		
 		cTwoPanels.add(cAttackOptions);
 		//***********************************************************************************
-		JPanel cspeedBar = new JPanel(new GridLayout(1,1,3,3));
-		cspeedBar.setBorder(BorderFactory.createTitledBorder("Speed"));
-		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 0, 30, 10);
-		
-		speedBar.setMajorTickSpacing(10);
-		//speedBar.setMinorTickSpacing(10);
-		speedBar.setPaintTicks(true);
-		
-		//Create the label table
-		Hashtable labelTable = new Hashtable();
-		labelTable.put( new Integer(0), new JLabel("SLOW") );
-		labelTable.put( new Integer(10), new JLabel("NORMAL") );
-		labelTable.put( new Integer(20), new JLabel("FAST") );
-		labelTable.put( new Integer(30), new JLabel("ULTRA") );
-		speedBar.setLabelTable(labelTable);
-		speedBar.setPaintLabels(true);
-		
-		speedBar.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-		
-		    JSlider source = (JSlider)e.getSource();
-		    if (!source.getValueIsAdjusting()) {
-		        int fps = (int)source.getValue();
-		        if (fps == 0) ProcessingSimulation.speedUp = 3;
-		        else if (fps == 10) ProcessingSimulation.speedUp = 7;
-		        else if (fps == 20) ProcessingSimulation.speedUp = 10;
-		        else if (fps == 30) ProcessingSimulation.speedUp = 15;
-		    }
-			}
-
-			});
-		
-		cspeedBar.add(speedBar);
+		JPanel cspeedBar = generateSpeedBar();
 		cTwoPanels.add(cspeedBar);
+		JPanel cspeedGenerating = generateSpeedGeneratingPackages();
+		cTwoPanels.add(cspeedGenerating);
 		// ***************************************************************
 		//for now dummy panel, just to fill space
 		JPanel d1 = new JPanel(new GridLayout(3,1,5,5));
@@ -300,7 +279,6 @@ public class DDoSSimulation {
 		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		// terminal tab --------------------------------------------------------------------------------
 		
-		
 		terminal = new JTextArea(44,67);
 		terminal.setBackground(Color.BLACK);
 		terminal.setForeground(Color.WHITE);
@@ -332,8 +310,6 @@ public class DDoSSimulation {
 		        			updateLastInputTerminal();
 		        		}
 		        	} 
-		        	
-		        	
 		        }
 		    }
 
@@ -365,12 +341,12 @@ public class DDoSSimulation {
 			public void actionPerformed(ActionEvent e) {
 				
 				globalNumSlaves = Integer.parseInt(numSlavesTF.getText());
-				ttlConf = Integer.parseInt(ttlTF.getText());
-				memoryConf = Integer.parseInt(memoryTF.getText());
-				packageConf = Integer.parseInt(packagesizeTF.getText());
+				//globalInMemTimeConf = Integer.parseInt(ttlTF.getText());
+				globalMemoryConf = Integer.parseInt(memoryTF.getText());
+				globalPackageSizeConf = Integer.parseInt(packagesizeTF.getText());
 				
 				numSlavesTF.setEditable(false);
-				ttlTF.setEditable(false);
+				//ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
 				
@@ -410,6 +386,83 @@ public class DDoSSimulation {
 			}
 		});
 		
+		ping.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				procGraphic.pingFromUser();
+			}
+		});
+		
+	}
+	
+	// bar for speed animation
+	private JPanel generateSpeedBar() {
+		JPanel cspeedBar = new JPanel(new GridLayout(1,1,3,3));
+		cspeedBar.setBorder(BorderFactory.createTitledBorder("Speed for animation"));
+		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 0, 30, 10);
+		
+		speedBar.setMajorTickSpacing(10);
+		//speedBar.setMinorTickSpacing(10);
+		speedBar.setPaintTicks(true);
+		
+		//Create the label table
+		Hashtable labelTable = new Hashtable();
+		labelTable.put( new Integer(0), new JLabel("SLOW") );
+		labelTable.put( new Integer(10), new JLabel("NORMAL") );
+		labelTable.put( new Integer(20), new JLabel("FAST") );
+		labelTable.put( new Integer(30), new JLabel("ULTRA") );
+		speedBar.setLabelTable(labelTable);
+		speedBar.setPaintLabels(true);
+		
+		speedBar.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+		
+		    JSlider source = (JSlider)e.getSource();
+		    if (!source.getValueIsAdjusting()) {
+		        int fps = (int)source.getValue();
+		        if (fps == 0) { ProcessingSimulation.speedUp = 3; globalSpeedUpBar = 3; }
+		        else if (fps == 10) { ProcessingSimulation.speedUp = 7; globalSpeedUpBar = 7; }
+		        else if (fps == 20) { ProcessingSimulation.speedUp = 10; globalSpeedUpBar = 10; }
+		        else if (fps == 30) { ProcessingSimulation.speedUp = 15; globalSpeedUpBar = 15; }
+		    }
+			}
+
+			});
+		
+		cspeedBar.add(speedBar);
+		return cspeedBar;
+	}
+	
+	// bar for speed generating packages - packages/sec
+	private JPanel generateSpeedGeneratingPackages() {
+		JPanel cspeedBar = new JPanel(new GridLayout(1,1,3,3));
+		cspeedBar.setBorder(BorderFactory.createTitledBorder("Speed for generating packages"));
+		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 1, 5, 3);
+		
+		speedBar.setMajorTickSpacing(1);
+		speedBar.setPaintTicks(true);
+		speedBar.setPaintLabels(true);
+		
+		speedBar.addChangeListener(new ChangeListener() {
+			@Override
+			public void stateChanged(ChangeEvent e) {
+		
+		    JSlider source = (JSlider)e.getSource();
+		    if (!source.getValueIsAdjusting()) {
+		        int fps = (int)source.getValue();
+		        switch (fps) {
+			        case 1: globalGenPackagePerSec = 1; break;
+			        case 2: globalGenPackagePerSec = 2; break;
+			        case 3: globalGenPackagePerSec = 3; break;
+			        case 4: globalGenPackagePerSec = 4; break;
+			        case 5: globalGenPackagePerSec = 5; break;
+			        default: globalGenPackagePerSec = 2; break;
+		        }
+		    }
+			}
+		});
+		cspeedBar.add(speedBar);
+		return cspeedBar;
 	}
 	
 	public void makeIPAddressConfigWindow() {
@@ -513,7 +566,7 @@ public class DDoSSimulation {
 		packages_sent_detail.setText("SENT PACKAGES\n\n");
 		
 		int numPackRec = 0;
-		Set<Package> received = comp.getReceivedPackages();
+		List<Package> received = comp.getReceivedPackages();
 		for (Package pack: received) {
 			packages_received_detail.append("___PACKAGE "+numPackRec+"___\n");
 			packages_received_detail.append("sender IP: "+pack.getEdge().getNodeFrom().getComputer().getIpAddress()+"\n");

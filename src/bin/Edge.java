@@ -20,6 +20,11 @@ public class Edge {
 	public Node getNodeFrom() { return nodeFrom; }
 	public Node getNodeTo() { return nodeTo; }
 	
+	public void deletePackage(Package pack) {
+		if (packages.contains(pack))
+			packages.remove(pack);
+	}
+	
 	public void startSendingPackage(Package pack) {
 		pack.setX(nodeFrom.getX());
 		pack.setY(nodeFrom.getY());

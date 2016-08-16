@@ -29,13 +29,14 @@ public class ProcessingSimulation extends PApplet{
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
 	private int prevRandomX = 0, prevRandomY = 0;
 	private PImage networkBackground;
-	private boolean newImageToLoad = false, firstImageLoad = false;
+	private boolean newImageToLoad = false, firstImageLoad = false, speedDoubled = false;
 	private Node mostRightDown;
 	private List<Package> virusPackageQueue = new LinkedList<Package>();
 	private List<Package> MSPackageQueue = new LinkedList<Package>();
 	private List<Package> SRPackageQueue = new LinkedList<Package>();
 	private List<Package> toTargetPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
+	private List<OutsidePackage> travellingPings = new LinkedList<OutsidePackage>();	//separe travelling list for pings - they have the highest prior
 	private Set<OutsidePackage> ackPackages = new HashSet<OutsidePackage>();
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
@@ -67,6 +68,23 @@ public class ProcessingSimulation extends PApplet{
 		PImage imgMasterSlave = loadImage("computer-success.png");
 		PImage imgInfected = loadImage("computer-alert.png");
 		PFont font = loadFont("coder-15.vlw");
+		
+		stroke(3);
+        strokeWeight(3);
+        
+        // connection from user
+        for (int i = 0; i <= 100; i++) {
+          float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/100);
+          float y = lerp((float)network.getTargetNode().getY() - 10, (float)network.getUserNode().getY() - 10, (float)i/100);
+          point(x, y);
+        }
+        
+        // connection to user
+        for (int i = 0; i <= 100; i++) {
+            float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/100);
+            float y = lerp((float)network.getTargetNode().getY() + 15, (float)network.getUserNode().getY() + 15, (float)i/100);
+            point(x, y);
+        }
 		
 		stroke(0);
 		fill(175);
@@ -106,7 +124,7 @@ public class ProcessingSimulation extends PApplet{
 		stroke(0);
 		fill(175);
 		ellipse(network.getTargetNode().getX(), network.getTargetNode().getY(), 16, 16);
-			  
+		
 		//draw edges
 		Set<Edge> allEdges = network.getAllEdges();
 		for(Edge e: allEdges) {
@@ -165,18 +183,31 @@ public class ProcessingSimulation extends PApplet{
 		//drawing user icon
 		PImage imgUser = loadImage("user.png");
 		image(imgUser, APPLET_WIDTH - 100, network.getTargetNode().getY()-40, 70, 70); 
+		
 		saveFrame("data/initalNetwork.png");
 		newImageToLoad = true;
 	}
 	
 	private void update() {
 		
-		lastMSWave = refreshPackageQueue(MSPackageQueue, 2, lastMSWave, 1000);
-		if (!DDoSSimulation.globalDDOSTypeDirect) {
-			Collections.shuffle(SRPackageQueue);
-			lastSRWave = refreshPackageQueue(SRPackageQueue, 3, lastSRWave, 500);
+		if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
+			lastMSWave = refreshPackageQueue(MSPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastMSWave, 1000);
+			if (!DDoSSimulation.globalDDOSTypeDirect) {
+				Collections.shuffle(SRPackageQueue);
+				lastSRWave = refreshPackageQueue(SRPackageQueue, DDoSSimulation.globalGenPackagePerSec + 2, lastSRWave, 500);
+			}
+			if (travellingPackages.size() < 15)
+				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, 1, lastToTargetWave, 500);
+			else
+				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastToTargetWave, 500);
+			
+			//function for refreshing based on TTL
+			//network.refreshComputerMemories();
+			
+			// function for refreshing based on number of processed packages
+			// this needs to be done for all SLAVES, REFLECTORS and TARGET
+			network.refreshComputerMemories(network.getTargetNode(), 2);
 		}
-		lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, 1, lastToTargetWave, 500);
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
 			
@@ -207,12 +238,22 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 	
+	public void pingFromUser() {
+		// insert some limit time between two ping clicks
+		if (stage != ProcessingSimulation.STAGE_FINISHED && stage != ProcessingSimulation.STAGE_PAUSE) {
+			long currSec = System.currentTimeMillis()/1000;
+			OutsidePackage newPack = new OutsidePackage(network.getTargetNode(), network.getUserNode().getX(), network.getUserNode().getY(), OutsidePackage.USER_PING);
+			newPack.setTimeCreated(currSec);
+			travellingPings.add(newPack);
+		}
+	}
+	
 	private void generateCYNpackages() {
 		network.sendFromAllMasters(Package.CYN_PACKAGE);
 	}
 	
 	public void draw() {
-		if (!isPaused()) {
+		if (!isPaused() && stage!= ProcessingSimulation.STAGE_FINISHED) {
 			update();
 			
 			if (newImageToLoad == true) {
@@ -232,14 +273,29 @@ public class ProcessingSimulation extends PApplet{
 			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 			
 			if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
-				 
 				drawAllTravellingPackages();
 				drawAllAckPackages(); 
+				drawAllTravellingPings();
 			}
 			drawMemoryInfoBar();
 			
 			if (network.getTargetNode().getComputer().isMemoryFull())
 				stage = ProcessingSimulation.STAGE_FINISHED;
+			else
+				if (stage == ProcessingSimulation.STAGE_FINISHED)
+					stage = ProcessingSimulation.STAGE_ATTACKING;
+		}
+		else if (stage == ProcessingSimulation.STAGE_FINISHED) {
+			// TODO: maybe to change opacity over the picture
+			// TODO: and to write that simulation is over
+			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
+			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
+			drawMemoryInfoBar();
+		}
+		else if (stage == ProcessingSimulation.STAGE_PAUSE) {
+			// details clicking
+			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
+			// here will go clicking for package view
 		}
 	}
 	
@@ -346,11 +402,47 @@ public class ProcessingSimulation extends PApplet{
 			stage = ProcessingSimulation.STAGE_GEN;
 	}
 	
+	private boolean drawPingPackage(OutsidePackage pack) {
+		boolean receivedStatus = pack.isReceived();
+		if (receivedStatus) {	//if received - process it, send ping back
+			if (pack.getStartNode().equals(network.getUserNode())) {
+					network.getTargetNode().processPing(pack);
+			}
+		}
+		else {	//if not received - draw it
+			
+		}
+		
+		return receivedStatus;
+	}
+	
+	private void drawAllTravellingPings() {
+		List<OutsidePackage> newTravellingPackages = new LinkedList<OutsidePackage>();
+		
+		for(OutsidePackage pack: travellingPings) {
+			if (pack.getType() == OutsidePackage.USER_PING || pack.getType() == OutsidePackage.TARGET_PING) {
+				boolean statusReceived = drawPingPackage(pack);
+				if (statusReceived == false)	// deleting received
+					newTravellingPackages.add(pack);
+			}
+		}
+		//removing received from list
+		travellingPings = newTravellingPackages;
+	}
+	
 	private void drawPackage_Helper(Package pack) {
 		float x = pack.getX();
 		float y = pack.getY();
 		
-		if (!DDoSSimulation.globalGraphTypeU45) speedUp *= 1;
+		// to speed up more 
+		if (travellingPackages.size() >= 20) {
+			speedUp = 25;
+			speedDoubled = true;
+		}
+		else if (travellingPackages.size() < 15 && speedDoubled) {
+			speedUp = DDoSSimulation.globalSpeedUpBar;
+			speedDoubled = false;
+		}
 		
 		float speedX = 0;
 		float speedY = 1;
@@ -559,6 +651,8 @@ public class ProcessingSimulation extends PApplet{
 		}
 		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
+		
+		network.createConnectionWithUser();
 	}
 	
 	public void makeInternalDirectAbove50() {
@@ -599,6 +693,8 @@ public class ProcessingSimulation extends PApplet{
 			if (mostRightDown.getX() < mostRightDownPrev.getX())
 				mostRightDown = mostRightDownPrev;
 		}
+		
+		network.createConnectionWithUser();
 	}
 	
 	private void makeNeighbours(Node from, Node to) {
@@ -662,10 +758,6 @@ public class ProcessingSimulation extends PApplet{
 				GUIcontrol.showComputerDetails(node.getComputer(), node.getID());
 				GUIcontrol.detailPanelVisible(true);
 				GUIcontrol.historyPanelVisible(true);
-				
-				if (node.getID() == 7) speedUp = 7;
-				if (node.getID() == 3) speedUp = 3; 
-				if (node.getID() == 10) speedUp = 20; 
 			}
 		}
 	}
@@ -702,6 +794,8 @@ public class ProcessingSimulation extends PApplet{
 			if (mostRightDown.getX() < mostRightDownPrev.getX())
 				mostRightDown = mostRightDownPrev;
 		}
+		
+		network.createConnectionWithUser();
 	}
 
 	public void makeInternalReflectedUnder30() {
@@ -748,6 +842,8 @@ public class ProcessingSimulation extends PApplet{
 		}
 		
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
+		
+		network.createConnectionWithUser();
 	}
 	
 	public void startDDos() { stage = ProcessingSimulation.STAGE_GEN; }
@@ -756,9 +852,7 @@ public class ProcessingSimulation extends PApplet{
 	
 	public int getStage() { return stage; }
 	
-	public void continueSimulation() {
-		stage = stageBeforePause;
-	}
+	public void continueSimulation() { stage = stageBeforePause; }
 	
 	public void pauseSimulation () {
 		stageBeforePause = stage;

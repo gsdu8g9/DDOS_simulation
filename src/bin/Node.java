@@ -96,7 +96,9 @@ public class Node {
 			case Package.ICMP_PACKAGE: return processICMPpackage(pack);
 			default: return null;
 		}
-		
+	}
+	
+	public void processPing(OutsidePackage ping) {
 		
 	}
 	
