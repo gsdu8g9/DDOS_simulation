@@ -26,8 +26,8 @@ public class DDoSSimulation {
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeCYN = true, globalGraphTypeU45 = false;
-	public static int globalNumSlaves = 100, 
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = true;
+	public static int globalNumSlaves = 40, 
 					  globalNumMasterSlaves = 5;
 	public static int globalSpeedUpBar = 3,
 					  globalInMemTimeConf = 10, 		
@@ -398,18 +398,18 @@ public class DDoSSimulation {
 	private JPanel generateSpeedBar() {
 		JPanel cspeedBar = new JPanel(new GridLayout(1,1,3,3));
 		cspeedBar.setBorder(BorderFactory.createTitledBorder("Speed for animation"));
-		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 0, 30, 10);
+		JSlider speedBar = new JSlider(JSlider.HORIZONTAL, 0, 3, 1);
 		
-		speedBar.setMajorTickSpacing(10);
+		speedBar.setMajorTickSpacing(1);
 		//speedBar.setMinorTickSpacing(10);
 		speedBar.setPaintTicks(true);
 		
 		//Create the label table
 		Hashtable labelTable = new Hashtable();
 		labelTable.put( new Integer(0), new JLabel("SLOW") );
-		labelTable.put( new Integer(10), new JLabel("NORMAL") );
-		labelTable.put( new Integer(20), new JLabel("FAST") );
-		labelTable.put( new Integer(30), new JLabel("ULTRA") );
+		labelTable.put( new Integer(1), new JLabel("NORMAL") );
+		labelTable.put( new Integer(2), new JLabel("FAST") );
+		labelTable.put( new Integer(3), new JLabel("ULTRA") );
 		speedBar.setLabelTable(labelTable);
 		speedBar.setPaintLabels(true);
 		
@@ -421,9 +421,9 @@ public class DDoSSimulation {
 		    if (!source.getValueIsAdjusting()) {
 		        int fps = (int)source.getValue();
 		        if (fps == 0) { ProcessingSimulation.speedUp = 3; globalSpeedUpBar = 3; }
-		        else if (fps == 10) { ProcessingSimulation.speedUp = 7; globalSpeedUpBar = 7; }
-		        else if (fps == 20) { ProcessingSimulation.speedUp = 10; globalSpeedUpBar = 10; }
-		        else if (fps == 30) { ProcessingSimulation.speedUp = 15; globalSpeedUpBar = 15; }
+		        else if (fps == 1) { ProcessingSimulation.speedUp = 7; globalSpeedUpBar = 7; }
+		        else if (fps == 2) { ProcessingSimulation.speedUp = 10; globalSpeedUpBar = 10; }
+		        else if (fps == 3) { ProcessingSimulation.speedUp = 15; globalSpeedUpBar = 15; }
 		    }
 			}
 

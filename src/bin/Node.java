@@ -98,8 +98,19 @@ public class Node {
 		}
 	}
 	
-	public void processPing(OutsidePackage ping) {
+	public OutsidePackage processPing(OutsidePackage ping) {
+		// input in received - AKO ODABERES DA SE PAMTE SVI PAKETI - s tim da ovde mora da ide novi red, zbog tipa paketa
+		// if not - just process and return ack to user
 		
+		OutsidePackage retAck = null;
+		if (this.getComputer().isMemoryFull() == false) {
+			// odraditi neki momenat da sto je target optereceniji sa memorijom, da to sporije odgovara na ping usera
+			// tako generalno funckionise, kapiram da se moze srediti standardno sa nekim onim vremenima
+			retAck = new OutsidePackage(this, network.getUserNode().getX(), network.getUserNode().cordY, OutsidePackage.TARGET_PING);
+			long currSec = System.currentTimeMillis()/1000;
+			retAck.setTimeCreated(currSec);
+		}
+		return retAck;
 	}
 	
 	private void processVirus(Package virus) {

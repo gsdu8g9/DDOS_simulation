@@ -17,7 +17,7 @@ public class ProcessingSimulation extends PApplet{
 	public static final int X_STEP_U30 = 200, Y_STEP_U30 = 70;
 	public static final int TIMER_ACK_PROCESSING = 1000;
 	
-	public static int speedUp = 1;
+	public static int speedUp = 3;
 	public static int stageBeforePause = 2;
 	public static int infected = 0;
 	public static int lastInfected = 0;
@@ -36,7 +36,8 @@ public class ProcessingSimulation extends PApplet{
 	private List<Package> SRPackageQueue = new LinkedList<Package>();
 	private List<Package> toTargetPackageQueue = new LinkedList<Package>();
 	private Set<Package> travellingPackages = new HashSet<Package>();
-	private List<OutsidePackage> travellingPings = new LinkedList<OutsidePackage>();	//separe travelling list for pings - they have the highest prior
+	private List<OutsidePackage> travellingPings = new LinkedList<OutsidePackage>();	//travelling list for pings - they have the highest prior
+	private List<OutsidePackage> pendingPings = new LinkedList<OutsidePackage>();
 	private Set<OutsidePackage> ackPackages = new HashSet<OutsidePackage>();
 	
 	public ProcessingSimulation(DDoSSimulation DDosGui) {
@@ -69,7 +70,7 @@ public class ProcessingSimulation extends PApplet{
 		PImage imgInfected = loadImage("computer-alert.png");
 		PFont font = loadFont("coder-15.vlw");
 		
-		stroke(3);
+		stroke(Color.LIGHT_GRAY.getRed(), Color.LIGHT_GRAY.getGreen(), Color.LIGHT_GRAY.getBlue());
         strokeWeight(3);
         
         // connection from user
@@ -190,6 +191,9 @@ public class ProcessingSimulation extends PApplet{
 	
 	private void update() {
 		
+		travellingPings.addAll(pendingPings);
+		pendingPings.clear();
+		
 		if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
 			lastMSWave = refreshPackageQueue(MSPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastMSWave, 1000);
 			if (!DDoSSimulation.globalDDOSTypeDirect) {
@@ -240,11 +244,11 @@ public class ProcessingSimulation extends PApplet{
 	
 	public void pingFromUser() {
 		// insert some limit time between two ping clicks
-		if (stage != ProcessingSimulation.STAGE_FINISHED && stage != ProcessingSimulation.STAGE_PAUSE) {
+		if (stage != ProcessingSimulation.STAGE_PAUSE) {
 			long currSec = System.currentTimeMillis()/1000;
-			OutsidePackage newPack = new OutsidePackage(network.getTargetNode(), network.getUserNode().getX(), network.getUserNode().getY(), OutsidePackage.USER_PING);
+			OutsidePackage newPack = new OutsidePackage(network.getUserNode(), network.getTargetNode().getX(), network.getTargetNode().getY(), OutsidePackage.USER_PING);
 			newPack.setTimeCreated(currSec);
-			travellingPings.add(newPack);
+			pendingPings.add(newPack);
 		}
 	}
 	
@@ -261,7 +265,7 @@ public class ProcessingSimulation extends PApplet{
 				newImageToLoad = false;
 			}
 			
-			if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
+			if (stage != ProcessingSimulation.STAGE_INIT_NETWORK || (stage == ProcessingSimulation.STAGE_INIT_NETWORK && travellingPings.size() > 0)) {
 				if (firstImageLoad == false) {
 					networkBackground = loadImage("initalNetwork.png");
 					firstImageLoad = true;
@@ -274,10 +278,11 @@ public class ProcessingSimulation extends PApplet{
 			
 			if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
 				drawAllTravellingPackages();
-				drawAllAckPackages(); 
-				drawAllTravellingPings();
+				drawAllAckPackages();
 			}
 			drawMemoryInfoBar();
+
+			drawAllTravellingPings();
 			
 			if (network.getTargetNode().getComputer().isMemoryFull())
 				stage = ProcessingSimulation.STAGE_FINISHED;
@@ -291,6 +296,12 @@ public class ProcessingSimulation extends PApplet{
 			image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
 			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 			drawMemoryInfoBar();
+			
+			// ping from user can be sent - but target won't answer
+			travellingPings.addAll(pendingPings);
+			pendingPings.clear();
+			drawAllTravellingPings();
+			
 		}
 		else if (stage == ProcessingSimulation.STAGE_PAUSE) {
 			// details clicking
@@ -402,32 +413,60 @@ public class ProcessingSimulation extends PApplet{
 			stage = ProcessingSimulation.STAGE_GEN;
 	}
 	
-	private boolean drawPingPackage(OutsidePackage pack) {
+	private OutsidePackage drawPingPackage(OutsidePackage pack) {
 		boolean receivedStatus = pack.isReceived();
+		OutsidePackage retAck = null;
 		if (receivedStatus) {	//if received - process it, send ping back
-			if (pack.getStartNode().equals(network.getUserNode())) {
-					network.getTargetNode().processPing(pack);
-			}
+			if (pack.getStartNode().equals(network.getUserNode()))
+					retAck = network.getTargetNode().processPing(pack);
 		}
-		else {	//if not received - draw it
-			
+		else drawPing_Helper(pack);
+		
+		return retAck;
+	}
+	
+	private void drawPing_Helper(OutsidePackage pack) {
+		float x = pack.getCurrentX();
+		
+		if (pack.getType() == OutsidePackage.USER_PING) x = x - speedUp;
+		else
+		if (pack.getType() == OutsidePackage.TARGET_PING) x = x + speedUp;
+		
+		pack.setCurrentX(x);
+		
+		stroke(0);
+		fill(175);
+				
+		PImage img;
+		if (pack.getType() == OutsidePackage.USER_PING) {
+			img = loadImage("userPing.png");
+			image(img, x, pack.getCurrentY()-25, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+		}
+		else if (pack.getType() == OutsidePackage.TARGET_PING) {
+			img = loadImage("targetPing.png");
+			image(img, x, pack.getCurrentY()-2, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
 		}
 		
-		return receivedStatus;
 	}
 	
 	private void drawAllTravellingPings() {
 		List<OutsidePackage> newTravellingPackages = new LinkedList<OutsidePackage>();
+		List<OutsidePackage> receivedAcks = new LinkedList<OutsidePackage>();
+		OutsidePackage ackPack = null;
 		
 		for(OutsidePackage pack: travellingPings) {
 			if (pack.getType() == OutsidePackage.USER_PING || pack.getType() == OutsidePackage.TARGET_PING) {
-				boolean statusReceived = drawPingPackage(pack);
-				if (statusReceived == false)	// deleting received
+				ackPack = drawPingPackage(pack);
+				if (ackPack == null)	// deleting received - if returned null, ack pack is not made - still travelling
 					newTravellingPackages.add(pack);
+				else
+					receivedAcks.add(ackPack);	//this list is needed because if we add to travelling directly - concurency problems
 			}
 		}
+		
 		//removing received from list
 		travellingPings = newTravellingPackages;
+		travellingPings.addAll(receivedAcks);
 	}
 	
 	private void drawPackage_Helper(Package pack) {

@@ -11,12 +11,16 @@ public class OutsidePackage {
 	
 	public OutsidePackage(Node target, float coordXTo, float coordYTo) {
 		this.startNode = target;
+		this.currentX = startNode.getX();
+		this.currentY = startNode.getY();
 		this.coordXTo = coordXTo;
 		this.coordYTo = coordYTo;
 	}
 	
 	public OutsidePackage(Node target, float coordXTo, float coordYTo, int type) {
 		this.startNode = target;
+		this.currentX = startNode.getX();
+		this.currentY = startNode.getY();
 		this.coordXTo = coordXTo;
 		this.coordYTo = coordYTo;
 		this.type = type;
