@@ -72,7 +72,7 @@ public class Node {
 		Set<Edge> allReflected = network.getAllReflectorEdges(this);
 		Set<Package> retSet = new HashSet<Package>();
 		for(Edge e: allReflected) {
-			Package pack = new Package(e, 32, packageType);
+			Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, packageType);
 			long currSec = System.currentTimeMillis()/1000;
 			pack.setTimeStartSending(currSec);
 			pack.setStatus(Package.WAITING);

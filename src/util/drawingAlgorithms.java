@@ -192,7 +192,7 @@ public class drawingAlgorithms {
 				}
 			}
 				
-			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
+			Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 			nodeSlave.setComputer(newSlave);
 			
 			if (drawEdgesToSlaves) {
@@ -229,7 +229,7 @@ public class drawingAlgorithms {
 		for (int i=0; i < DDoSSimulation.globalNumMasterSlaves; i++) {
 			Node masterSlave = new Node(network, PIXEL_START_LEFT + paddingMasterSlaves * i, PIXEL_START_TOP + getPaddingBetweenTopDown(false) - 30);
 			masterSlave.setColor(new Color(rand.nextInt(254),rand.nextInt(254), rand.nextInt(254)));
-			Computer newMasterSlave = new Computer("216.58.214." + masterSlave.getID(), "MASTER_ZOMBIE" + masterSlave.getID(), Computer.MASTER_SLAVE, 2048);
+			Computer newMasterSlave = new Computer("216.58.214." + masterSlave.getID(), "MASTER_ZOMBIE" + masterSlave.getID(), Computer.MASTER_SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 			masterSlave.setComputer(newMasterSlave);
 				
 				//drawing egdes from MASTERSLAVE -> SLAVEs

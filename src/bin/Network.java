@@ -72,7 +72,7 @@ public class Network {
 	}
 	
 	public void createConnectionWithUser() {
-		Computer userComp = new Computer("79.255.255.255", "RANDOM USER", Computer.USER, 2048);
+		Computer userComp = new Computer("79.255.255.255", "RANDOM USER", Computer.USER, 2048, 4);
 		userNode = new Node(this, userComp, ProcessingSimulation.APPLET_WIDTH - 100, targetNode.getY());
 		connectionToUser = new Edge(this, targetNode, userNode);
 		connectionToTarget = new Edge(this, userNode, targetNode);
@@ -100,11 +100,11 @@ public class Network {
 		}
 	}
 	
-	public void refreshComputerMemories(Node n, int numToProcess) {
+	public void refreshComputerMemory(Node n, int numToProcess) {
 		long time = n.getComputer().refreshMemory(numToProcess, TIME_WAIT_PROCESSING);
 		n.getComputer().setLastWave(time);
 	}
-	
+		
 	public void infectMasterZombies() {
 		//making all email virus packages and preparing them to be drawn
 		int inc = 1;

@@ -1,6 +1,7 @@
 package graphic;
 
 import java.awt.BorderLayout;
+import java.awt.Choice;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -22,12 +23,12 @@ import processing.core.*;
 public class DDoSSimulation {
 
 	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
-							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 300;
+							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 200;
 	
 	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
 	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = true, globalPackageTypeCYN = true, globalGraphTypeU45 = true;
-	public static int globalNumSlaves = 40, 
+	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeTCP = true, globalGraphTypeU45 = true;
+	public static int globalNumSlaves =30, 
 					  globalNumMasterSlaves = 5;
 	public static int globalSpeedUpBar = 3,
 					  globalInMemTimeConf = 10, 		
@@ -42,7 +43,8 @@ public class DDoSSimulation {
 	
 	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel, computerDetailsPanel, userHelpPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
-	private JTextField numSlavesTF, memoryTF, packagesizeTF;
+	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF;
+	private Choice numSlavesChoice;
 	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal, packages_received_detail, packages_sent_detail;
 	private JButton startDDoS;
@@ -53,25 +55,25 @@ public class DDoSSimulation {
 	private String[] pArgs = {"ProcessingSimulation "};
 	
 	public DDoSSimulation() {
-		//makePopUpStart();
-		makeWindow();
+		makePopUpStart();
+		//makeWindow();
 		procGraphic = new ProcessingSimulation(this);
-		procGraphic.makeNetworkDefault();
-		runSimulation();
+		//procGraphic.makeNetworkDefault();
+		//runSimulation();
 	}
 	
 	private void makePopUpStart() {
 		popUpStart = new JFrame("New configuration");
 		popUpStart.setSize(POPUP_WIDTH, POPUP_HEIGHT);
 		
-		startingPanel = new JPanel(new GridLayout(5,1));
+		startingPanel = new JPanel(new GridLayout(3,1));
 		JPanel buttonPanel = new JPanel();
 		
 		JPanel resourcesPanel = new JPanel();
-		resourcesPanel.setBorder(BorderFactory.createTitledBorder("Resources"));
+		resourcesPanel.setBorder(BorderFactory.createTitledBorder("DDoS attack"));
 		ButtonGroup resourcesG = new ButtonGroup();
-		JRadioButton internalResources = new JRadioButton("Internal");
-		JRadioButton networkResources = new JRadioButton("Network");
+		JRadioButton internalResources = new JRadioButton("Internal - Direct - TCP");
+		JRadioButton networkResources = new JRadioButton("Network - Reflected - ICMP");
 		internalResources.setSelected(true);
 		resourcesG.add(internalResources);		
 		resourcesG.add(networkResources);
@@ -79,7 +81,7 @@ public class DDoSSimulation {
 		resourcesPanel.add(networkResources);
 		startingPanel.add(resourcesPanel, BorderLayout.NORTH);
 		
-		JPanel typePanel = new JPanel();
+	/*	JPanel typePanel = new JPanel();
 		typePanel.setBorder(BorderFactory.createTitledBorder("DDoS Type"));
 		ButtonGroup ddosTypeG = new ButtonGroup();
 		JRadioButton direct = new JRadioButton("Direct");
@@ -102,22 +104,23 @@ public class DDoSSimulation {
 		packageType.add(cyn);				
 		packageType.add(other);			// --> UPDATE
 		startingPanel.add(packageType, BorderLayout.SOUTH);
-		
-	/*	JPanel numberSlaves = new JPanel();
+		*/
+		JPanel numberSlaves = new JPanel();
 		numberSlaves.setBorder(BorderFactory.createTitledBorder("Number of slaves"));
 		ButtonGroup slavesG = new ButtonGroup();
-		JRadioButton under45 = new JRadioButton("REAL SIM- under 60");
-		JRadioButton above45 = new JRadioButton("GRAPH SIM - above 60");
+		JRadioButton under45 = new JRadioButton("REAL SIM- under 45");
+		JRadioButton above45 = new JRadioButton("GRAPH SIM - above 45");
 		under45.setSelected(true);
 		slavesG.add(under45);				
 		slavesG.add(above45);			
 		numberSlaves.add(under45);				
 		numberSlaves.add(above45);			
-		startingPanel.add(numberSlaves); */
+		//startingPanel.add(numberSlaves); 
+		startingPanel.add(numberSlaves, BorderLayout.CENTER);
 		
 		JButton confirm = new JButton("START");
 		buttonPanel.add(confirm);
-		startingPanel.add(confirm);
+		startingPanel.add(confirm, BorderLayout.SOUTH);
 		
 		popUpStart.add(startingPanel);
 		
@@ -127,9 +130,9 @@ public class DDoSSimulation {
 		confirm.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				globalResourceTypeInternal = internalResources.isSelected();
-				globalDDOSTypeDirect = direct.isSelected();
-				globalPackageTypeCYN = cyn.isSelected();
-				//globalGraphTypeU45 = under45.isSelected();
+				globalDDOSTypeDirect = internalResources.isSelected();
+				globalPackageTypeTCP = internalResources.isSelected();
+				globalGraphTypeU45 = under45.isSelected();
 				
 				makeWindow();
 			}
@@ -137,7 +140,7 @@ public class DDoSSimulation {
 	}
 	
 	private void makeWindow() {
-		//popUpStart.setVisible(false);
+		popUpStart.setVisible(false);
 		
 		window = new JFrame("DDoS simulation");
 		window.setSize(WINDOW_WIDTH, WINDOW_HEIGHT); 
@@ -163,17 +166,29 @@ public class DDoSSimulation {
 		cSlavesConfig.setBorder(BorderFactory.createTitledBorder("Slaves configuration"));
 		
 		numSlavesTF = new JTextField(15);		JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);			
-												JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
+		ttlTF = new JTextField(15);				JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
 												JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
 												JTextField dummy12 = new JTextField(10);	dummy12.setVisible(false);
+					
+												
+		String[] choicesDirectU45 = { "13", "17", "20", "15", "33", "42" };
+		String[] choicesDirectA45 = { "60", "70", "80", "90", "130", "190" };
+		String[] choicesReflectedU45 = { "13", "17", "20", "15", "33", "42" };
+		String[] choicesReflectedA45 = { "60", "70", "80", "90", "130", "190" };
+		numSlavesChoice = new Choice();
 		
-		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesTF); 	cSlavesConfig.add(dummy7);
-		cSlavesConfig.add(new JLabel("Memory size:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
-		//cSlavesConfig.add(new JLabel("Time in memory:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
-		cSlavesConfig.add(new JLabel("Package size: "));		cSlavesConfig.add(packagesizeTF); 	cSlavesConfig.add(dummy10);
-																									
+		String[] choices = globalDDOSTypeDirect == true ?  globalGraphTypeU45 == true?  choicesDirectU45 :  choicesDirectA45 : 
+			 globalGraphTypeU45 == true?  choicesReflectedU45 :  choicesReflectedA45;
+		for (String ch : choices)
+			numSlavesChoice.add(ch);
+														
+		cSlavesConfig.add(new JLabel("Number of slaves:"));		cSlavesConfig.add(numSlavesChoice); 	cSlavesConfig.add(dummy7);
+		cSlavesConfig.add(new JLabel("Memory size [B]:"));			cSlavesConfig.add(memoryTF); 		cSlavesConfig.add(dummy8);
+		cSlavesConfig.add(new JLabel("Time in memory [s]:"));		cSlavesConfig.add(ttlTF); 			cSlavesConfig.add(dummy9);
+		cSlavesConfig.add(new JLabel("Package size [B]: "));		cSlavesConfig.add(packagesizeTF); 	cSlavesConfig.add(dummy10);
+				
 		JButton submitConfiguration = new JButton("Configure");					
 		cSlavesConfig.add(dummy11);
 		cSlavesConfig.add(submitConfiguration);
@@ -184,6 +199,7 @@ public class DDoSSimulation {
 		cAttackOptions.setBorder(BorderFactory.createTitledBorder("DDOS Attack options"));
 		
 		JButton startInfectingMasters = new JButton("INFECT ZOMBIES");
+		startInfectingMasters.setEnabled(false);
 		cAttackOptions.add(startInfectingMasters);
 		
 		startDDoS = new JButton("START DDOS");
@@ -195,6 +211,7 @@ public class DDoSSimulation {
 		cAttackOptions.add(pausePlay);
 		
 		JButton ping = new JButton("PING");
+		ping.setEnabled(false);
 		cAttackOptions.add(ping);
 		ping.setBackground(Color.GREEN);
 		
@@ -260,20 +277,16 @@ public class DDoSSimulation {
 		packages_received_detail.setForeground(Color.RED);
 		packages_received_detail.setFont(terminalFont);
 		JScrollPane sp_packReceived = new JScrollPane(packages_received_detail);
-		
+		/*
 		packages_sent_detail = new JTextArea(12,65);
 		packages_sent_detail.setBackground(Color.BLACK);
 		packages_sent_detail.setForeground(Color.MAGENTA);
 		packages_sent_detail.setFont(terminalFont);
 		JScrollPane sp_packSent = new JScrollPane(packages_sent_detail);
+		*/
 		
-		//JLabel received = new JLabel("Received packages"); 		received.setFont(labelFont); 
-		//JLabel sent = new JLabel("Sent packages"); 				sent.setFont(labelFont);
-		
-		//historyPanel.add(received);
 		historyPanel.add(sp_packReceived);
-		//historyPanel.add(sent);
-		historyPanel.add(sp_packSent);
+		//historyPanel.add(sp_packSent);
 		
 		computerDetailsPanel.add(historyPanel, BorderLayout.CENTER);
 		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
@@ -340,20 +353,22 @@ public class DDoSSimulation {
 		submitConfiguration.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
-				globalNumSlaves = Integer.parseInt(numSlavesTF.getText());
-				//globalInMemTimeConf = Integer.parseInt(ttlTF.getText());
+				globalNumSlaves = Integer.parseInt(numSlavesChoice.getItem(numSlavesChoice.getSelectedIndex()));
+				globalInMemTimeConf = Integer.parseInt(ttlTF.getText());
 				globalMemoryConf = Integer.parseInt(memoryTF.getText());
 				globalPackageSizeConf = Integer.parseInt(packagesizeTF.getText());
 				
 				numSlavesTF.setEditable(false);
-				//ttlTF.setEditable(false);
+				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
 				
 				globalGraphTypeU45 = globalDDOSTypeDirect? (globalNumSlaves <= 45 ? true : false ) : (globalNumSlaves <= 35 ? true : false);
 				
 				submitConfiguration.setEnabled(false);
-				makeIPAddressConfigWindow();
+				startInfectingMasters.setEnabled(true);
+				ping.setEnabled(true);
+				configureNetworkByDefault();
 			}
 		});
 		
@@ -465,7 +480,7 @@ public class DDoSSimulation {
 		return cspeedBar;
 	}
 	
-	public void makeIPAddressConfigWindow() {
+	/*public void makeIPAddressConfigWindow() {
 		ipAddressConfig = new JFrame();
 		ipAddressConfig.setSize(WINDOW_WIDTH, WINDOW_HEIGHT/4);
 		ipMainPanel = new JPanel(new BorderLayout());
@@ -547,6 +562,7 @@ public class DDoSSimulation {
 			}
 		});
 	}
+	*/
 	
 	private void configureNetworkByDefault() {
 		procGraphic.makeNetworkDefault();
@@ -562,10 +578,11 @@ public class DDoSSimulation {
 		type_detail.setText(": " + comp.getTypeString());
 		ttl_detail.setText(": " + comp.getTTL());
 		memory_detail.setText(": " + comp.getMemBuffSizeCurrent() + " / " + comp.getMemBuffSize());
-		packages_received_detail.setText("RECEIVED PACKAGES\n\n");
-		packages_sent_detail.setText("SENT PACKAGES\n\n");
 		
-		int numPackRec = 0;
+		packages_received_detail.setText("RECEIVED PACKAGES\n" +"total number - "+ comp.getNumberOfPackagesReceived()+ "\n");
+		packages_received_detail.append("still in memory:\n\n");
+				
+		int numPackRec = 1;
 		List<Package> received = comp.getReceivedPackages();
 		for (Package pack: received) {
 			packages_received_detail.append("___PACKAGE "+numPackRec+"___\n");
@@ -576,7 +593,10 @@ public class DDoSSimulation {
 			packages_received_detail.append("________________\n");
 			numPackRec++;
 		}
-		int numPackSent = 0;
+		/*int numPackSent = 0;
+		//packages_sent_detail.setText("SENT PACKAGES\n"+"total number - "+ comp.getNumberOfPackagesSent()+ "\n");
+		//packages_sent_detail.append("still in memory:\n\n");
+		 
 		Set<Package> sent = comp.getSentPackages();
 		for (Package pack: sent) {
 			packages_sent_detail.append("___PACKAGE "+numPackSent+"___\n");
@@ -586,7 +606,7 @@ public class DDoSSimulation {
 			packages_sent_detail.append("time received: "+pack.getReceivedTime()+"\n");
 			packages_sent_detail.append("________________\n");
 			numPackSent++;
-		}
+		} */
 		
 	}
 	

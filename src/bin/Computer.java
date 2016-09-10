@@ -14,16 +14,10 @@ public class Computer {
 	private int[] memBuffer;
 	private int maxSize = 0, currSize = 0;
 	private long lastWave = 0;
+	private int numberOfPackagesReceived = 0;
+	private int numberOfPackagesSent = 0;
 	private List<Package> receivedPackages = new LinkedList<Package>();			// packages should be sorted by received time
 	private Set<Package> sentPackages = new HashSet<Package>();
-	
-	public Computer(String ipAddress, String domain, int type, int memSize) {
-		this.ipAddress = ipAddress;
-		this.domain = domain;
-		this.type = type;
-		TTL = 4;
-		maxSize = memSize;
-	}
 	
 	public Computer(String ipAddress, String domain, int type, int memSize, int TTL) {
 		this.ipAddress = ipAddress;
@@ -114,14 +108,30 @@ public class Computer {
 		else
 			return null;
 	}
-	
+		
 	public List<Package> getReceivedPackages() { return receivedPackages; }
 	
-	public void addReceivedPackage(Package pack) { receivedPackages.add(pack); }
+	public void addReceivedPackage(Package pack) { setNumberOfPackagesReceived(getNumberOfPackagesReceived() + 1); receivedPackages.add(pack); }
 	
 	public Set<Package> getSentPackages() { return sentPackages; }
 	
-	public void addSentPackage(Package pack) { sentPackages.add(pack); }
+	public void addSentPackage(Package pack) { setNumberOfPackagesSent(getNumberOfPackagesSent() + 1); sentPackages.add(pack); }
+
+	public int getNumberOfPackagesReceived() {
+		return numberOfPackagesReceived;
+	}
+
+	private void setNumberOfPackagesReceived(int numberOfPackagesReceived) {
+		this.numberOfPackagesReceived = numberOfPackagesReceived;
+	}
+
+	public int getNumberOfPackagesSent() {
+		return numberOfPackagesSent;
+	}
+
+	private void setNumberOfPackagesSent(int numberOfPackagesSent) {
+		this.numberOfPackagesSent = numberOfPackagesSent;
+	}
 	
 
 }

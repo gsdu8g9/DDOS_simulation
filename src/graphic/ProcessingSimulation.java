@@ -206,11 +206,11 @@ public class ProcessingSimulation extends PApplet{
 				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastToTargetWave, 500);
 			
 			//function for refreshing based on TTL
-			//network.refreshComputerMemories();
+			network.refreshComputerMemories();
 			
 			// function for refreshing based on number of processed packages
 			// this needs to be done for all SLAVES, REFLECTORS and TARGET
-			network.refreshComputerMemories(network.getTargetNode(), 2);
+			network.refreshComputerMemory(network.getTargetNode(), 2);
 		}
 		
 		if (stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
@@ -614,12 +614,12 @@ public class ProcessingSimulation extends PApplet{
 	public void makeNetworkDefault() { 
 		network = new Network(this);
 		
-		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.MASTER, 2048);
+		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.MASTER, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		Node masterNode = new Node(network, masterComputer, APPLET_WIDTH/2, 50);
 		masterNode.setID(500);
 		network.addNode(masterNode);
 		
-		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, 2048);
+		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
 		targetNode.setID(505);
 		network.addNode(targetNode);
@@ -663,15 +663,30 @@ public class ProcessingSimulation extends PApplet{
 			
 			makeReflectorAndAddToNetwork(leftStart, X-35, Y, 350);
 			makeReflectorAndAddToNetwork(leftStart, X, Y, 350);
-			makeReflectorAndAddToNetwork(leftStart, X+35, Y, 350);
-			
+			Node lastRefl = makeReflectorAndAddToNetwork(leftStart, X+35, Y, 350);
+
+			if (mostRightDown != null) {
+				if (mostRightDown.getX() <= lastRefl.getX())
+					mostRightDown = lastRefl;
+				else if ((mostRightDown.getX() <= lastRefl.getX() + 30) && (mostRightDown.getY() < lastRefl.getY()))
+					mostRightDown = lastRefl;
+			}
+			else
+				mostRightDown = lastRefl;
+
 			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%7 > 0)) {
 				for (int j=0; j<DDoSSimulation.globalNumSlaves%7; j++) {
 					if (j%2 == 0) makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35+35*((j+2)/2), Y, 100);
-					else makeReflectorAndAddToNetwork(leftStart, X+35+35*((j+2)/2), Y, 350);
+					else {
+						Node lastRefl2 =makeReflectorAndAddToNetwork(leftStart, X+35+35*((j+2)/2), Y, 350);
+						if (mostRightDown.getX() <= lastRefl2.getX())
+							mostRightDown = lastRefl2;
+						else if ((mostRightDown.getX() <= lastRefl2.getX() + 30) && (mostRightDown.getY() < lastRefl2.getY()))
+							mostRightDown = lastRefl2;
+					}
 				}
 			}
-			
+
 		}	
 		
 		Vector<Node> reflectors = network.getReflectorNodes();
@@ -688,9 +703,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
-		
-		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
-		
+				
 		network.createConnectionWithUser();
 	}
 	
@@ -749,7 +762,7 @@ public class ProcessingSimulation extends PApplet{
 		Random rand = new Random();
 		nodeMasterSlave.setColor(new Color(rand.nextInt(254),rand.nextInt(254), rand.nextInt(254)));
 				
-		Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, 2048);
+		Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		nodeMasterSlave.setComputer(newMasterSlave);
 		network.getMasterNode().addSlave(nodeMasterSlave);
 		
@@ -764,7 +777,7 @@ public class ProcessingSimulation extends PApplet{
 	private void makeSlaveAndAddToNetwork(Node nodeMasterSlave, int leftStart, int x, int y, int yOffset) {
 		
 		Node nodeSlave = new Node(network, leftStart+x, 3*PIXEL_START_TOP+y+yOffset);
-		Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, 2048);
+		Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		nodeSlave.setComputer(newSlave);
 		nodeMasterSlave.addSlave(nodeSlave);
 		nodeSlave.setColor(nodeMasterSlave.getColor());
@@ -777,12 +790,13 @@ public class ProcessingSimulation extends PApplet{
 			makeNeighbours(nodeSlave,network.getTargetNode());
 	}
 	
-	private void makeReflectorAndAddToNetwork(int leftStart, int X, int Y, int Yoffset) {
+	private Node makeReflectorAndAddToNetwork(int leftStart, int X, int Y, int Yoffset) {
 		Node nodeReflector1 = new Node(network, leftStart+X, 3*PIXEL_START_TOP+Y+Yoffset);
-		Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING, 2048);
+		Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING,DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		nodeReflector1.setComputer(newReflector1);
 		network.addNode(nodeReflector1);
 		network.addReflectorNode(nodeReflector1);
+		return nodeReflector1;
 	}
 	
 	public void checkClickedComputer(int cordmouseX, int cordmouseY) {
@@ -858,12 +872,27 @@ public class ProcessingSimulation extends PApplet{
 			
 			makeReflectorAndAddToNetwork(leftStart, X-70, Y, 350);
 			makeReflectorAndAddToNetwork(leftStart, X, Y, 350);
-			makeReflectorAndAddToNetwork(leftStart, X+70, Y, 350);
+			Node lastRefl = makeReflectorAndAddToNetwork(leftStart, X+70, Y, 350);
+			
+			if (mostRightDown != null) {
+				if (mostRightDown.getX() <= lastRefl.getX())
+					mostRightDown = lastRefl;
+				else if ((mostRightDown.getX() <= lastRefl.getX() + 30) && (mostRightDown.getY() < lastRefl.getY()))
+					mostRightDown = lastRefl;
+			}
+			else
+				mostRightDown = lastRefl;
 			
 			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%7 > 0)) {
 				for (int j=0; j<DDoSSimulation.globalNumSlaves%7; j++) {
 					if (j%2 == 0) makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+70+100*((j+2)/2), Y, 100);
-					else makeReflectorAndAddToNetwork(leftStart, X+70+100*((j+2)/2), Y, 350);
+					else  {
+						Node lastRefl2 = makeReflectorAndAddToNetwork(leftStart, X+70+100*((j+2)/2), Y, 350);
+						if (mostRightDown.getX() <= lastRefl2.getX())
+							mostRightDown = lastRefl2;
+						else if ((mostRightDown.getX() <= lastRefl2.getX() + 30) && (mostRightDown.getY() < lastRefl2.getY()))
+							mostRightDown = lastRefl2;
+					}
 				}
 			}
 			
@@ -879,8 +908,6 @@ public class ProcessingSimulation extends PApplet{
 			}
 			makeNeighbours(reflector, network.getTargetNode());
 		}
-		
-		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
 		
 		network.createConnectionWithUser();
 	}
