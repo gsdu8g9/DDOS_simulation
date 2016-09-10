@@ -4,6 +4,8 @@ public class Package {
 	public static final int EMAIL_VIRUS = 0, CYN_PACKAGE = 1, ICMP_PACKAGE = 2;
 	public static final int INIT = 0, WAITING = 1, TRAVELING = 2, RECEIVED = 3;
 	
+	private Packet packet;
+	
 	private Edge edge;
 	private int size, type;
 	private float cordX = 0, cordY = 0;
@@ -15,6 +17,10 @@ public class Package {
 		this.size = size;
 		this.type = type;
 	}
+	
+	public void setPacket(Packet pack) { packet = pack; }
+	
+	public Packet getPacket() { return packet; }
 	
 	public int getStatus() { return status; }
 	
