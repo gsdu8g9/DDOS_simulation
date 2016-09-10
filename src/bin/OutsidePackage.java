@@ -3,6 +3,8 @@ package bin;
 public class OutsidePackage {
 	public static final int UNKNOWN = 0, ACKNOWLEDGE = 1, USER_PING = 2, TARGET_PING = 3;
 	
+	private Packet packet;
+	
 	private Node startNode;
 	private int type = UNKNOWN;
 	private float coordXTo, coordYTo;
@@ -54,6 +56,14 @@ public class OutsidePackage {
 		}
 		
 		return false;	// UNKNOWN, ACK
+	}
+
+	public Packet getPacket() {
+		return packet;
+	}
+
+	public void setPacket(Packet packet) {
+		this.packet = packet;
 	}
 	
 }
