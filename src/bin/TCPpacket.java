@@ -12,12 +12,13 @@ public class TCPpacket extends Packet{
 	private String ackNumber = "";			//4B
 	private int type = UNKNOWN_TYPE; 		//1bit
 	
-	public TCPpacket(String source, String destination, int type) {
+	public TCPpacket(String source, String destination, int type, int size) {
 		this.source = source;
 		this.destination = destination;
 		sequenceNumber = makeRandom4BNumber();
 		ackNumber = makeRandom4BNumber();
 		this.type = type;
+		dataSize = size;
 	}
 	
 	private String makeRandom4BNumber() {

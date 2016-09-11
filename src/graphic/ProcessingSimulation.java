@@ -305,8 +305,12 @@ public class ProcessingSimulation extends PApplet{
 		}
 		else if (stage == ProcessingSimulation.STAGE_PAUSE) {
 			// details clicking
-			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
-			// here will go clicking for package view
+			if (mousePressed == true) {
+				checkClickedComputer(mouseX, mouseY);
+				checkClickedPackages(mouseX, mouseY);
+				mousePressed = false;
+			}
+			
 		}
 	}
 	
@@ -809,12 +813,25 @@ public class ProcessingSimulation extends PApplet{
 				(cordmouseY >= node.getY()-10) && (cordmouseY <= node.getY()+10)) {
 				//clicked on computer -> show details
 				GUIcontrol.showComputerDetails(node.getComputer(), node.getID());
-				GUIcontrol.detailPanelVisible(true);
-				GUIcontrol.historyPanelVisible(true);
 			}
 		}
 	}
-
+	
+	public void checkClickedPackages(int X, int Y) {
+		
+		for (Package p : travellingPackages) {
+			if ((X >= p.getX()-10) && (X <= p.getX()+10) &&
+					(Y >= p.getY()-10) && (Y <= p.getY()+10)) {
+					//clicked on pack -> show details
+				if (p.getPacket() != null)
+					GUIcontrol.makePacketWindow(p.getPacket().toString());
+				else
+					GUIcontrol.makePacketWindow("No packet!");
+				}
+		}
+		//TODO: add checking for other queues
+	}
+	
 	public void makeInternalDirectUnder30() {
 		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/3;
 		int toFill = masters % MAX_MASTERS_U30;

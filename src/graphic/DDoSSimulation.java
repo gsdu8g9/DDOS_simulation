@@ -36,17 +36,16 @@ public class DDoSSimulation {
 			          globalPackageSizeConf = 32;
 	public static int globalGenPackagePerSec = 2;	// from masters - other we adjust according to this
 					 
-	private JFrame window, popUpStart, ipAddressConfig;
+	private JFrame window, popUpStart;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
 	
 	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel, computerDetailsPanel, userHelpPanel;
-	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
-	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF;
+	private JLabel id_detail, ipAddress_detail, ttl_detail, type_detail, memory_detail;
+	private JTextField ttlTF, memoryTF, packagesizeTF;
 	private Choice numSlavesChoice;
-	private boolean userInput = false, defaultInput = false, fileInput = false;
-	private JTextArea terminal, packages_received_detail, packages_sent_detail;
+	private JTextArea terminal, packages_received_detail;
 	private JButton startDDoS;
 	
 	private int packageType = 1, lastInputTerminal = 1;
@@ -139,6 +138,12 @@ public class DDoSSimulation {
 		});
 	}
 	
+	public void makePacketWindow(String s) {
+		
+		JOptionPane.showMessageDialog(null, s, "Packet overview", JOptionPane.PLAIN_MESSAGE);
+		
+	}
+	
 	private void makeWindow() {
 		popUpStart.setVisible(false);
 		
@@ -165,13 +170,15 @@ public class DDoSSimulation {
 		JPanel cSlavesConfig = new JPanel(new GridLayout(5,3,3,3));
 		cSlavesConfig.setBorder(BorderFactory.createTitledBorder("Slaves configuration"));
 		
-		numSlavesTF = new JTextField(15);		JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);			
+												JTextField dummy7 = new JTextField(10);		dummy7.setVisible(false);			
 		ttlTF = new JTextField(15);				JTextField dummy8 = new JTextField(10);		dummy8.setVisible(false);
 		memoryTF = new JTextField(15);			JTextField dummy9 = new JTextField(10);		dummy9.setVisible(false);
 		packagesizeTF = new JTextField(15);		JTextField dummy10 = new JTextField(10);	dummy10.setVisible(false);
 												JTextField dummy11 = new JTextField(10);	dummy11.setVisible(false);
 												JTextField dummy12 = new JTextField(10);	dummy12.setVisible(false);
-					
+		ttlTF.setText("4");										
+		memoryTF.setText("2048");
+		packagesizeTF.setText("32");
 												
 		String[] choicesDirectU45 = { "13", "17", "20", "15", "33", "42" };
 		String[] choicesDirectA45 = { "60", "70", "80", "90", "130", "190" };
@@ -233,19 +240,17 @@ public class DDoSSimulation {
 		configurePanel.add(d1, BorderLayout.SOUTH);
 		
 		// details panel -------------------------------------------------------------------------------
-		detailsPanel = new JPanel(new GridLayout(6, 3, 3, 3));
+		detailsPanel = new JPanel(new GridLayout(5, 3, 3, 3));
 		detailsPanel.setBorder(BorderFactory.createTitledBorder("Details"));
 		
 		JLabel ID = new JLabel("ID"); 				ID.setFont(labelFont);
 		JLabel IPAddress = new JLabel("IPAddress"); IPAddress.setFont(labelFont);
-		JLabel Domain = new JLabel("Domain"); 		Domain.setFont(labelFont);
 		JLabel Type = new JLabel("Type"); 			Type.setFont(labelFont);
 		JLabel Memory = new JLabel("Memory"); 		Memory.setFont(labelFont);
 		JLabel TTL = new JLabel("TTL");				TTL.setFont(labelFont);
 		
 		id_detail = new JLabel();			id_detail.setFont(descriptionFont);			
 		ipAddress_detail = new JLabel();	ipAddress_detail.setFont(descriptionFont);	
-		domain_detail = new JLabel();		domain_detail.setFont(descriptionFont);		
 		ttl_detail = new JLabel();			ttl_detail.setFont(descriptionFont);		
 		memory_detail = new JLabel();		memory_detail.setFont(descriptionFont);		
 		type_detail = new JLabel();			type_detail.setFont(descriptionFont);	
@@ -253,14 +258,12 @@ public class DDoSSimulation {
 			
 		JTextField dummy1 = new JTextField("Dummy textfield.");		dummy1.setVisible(false);
 		JTextField dummy2 = new JTextField("Dummy textfield.");		dummy2.setVisible(false);
-		JTextField dummy3 = new JTextField("Dummy textfield.");		dummy3.setVisible(false);
 		JTextField dummy4 = new JTextField("Dummy textfield.");		dummy4.setVisible(false);
 		JTextField dummy5 = new JTextField("Dummy textfield.");		dummy5.setVisible(false);
 		JTextField dummy6 = new JTextField("Dummy textfield.");		dummy6.setVisible(false);
 		
 		detailsPanel.add(ID);			detailsPanel.add(id_detail);			detailsPanel.add(dummy1);
 		detailsPanel.add(IPAddress);	detailsPanel.add(ipAddress_detail);		detailsPanel.add(dummy2);
-		detailsPanel.add(Domain);		detailsPanel.add(domain_detail);		detailsPanel.add(dummy3);
 		detailsPanel.add(Type);			detailsPanel.add(type_detail);			detailsPanel.add(dummy4);
 		detailsPanel.add(Memory);		detailsPanel.add(memory_detail);		detailsPanel.add(dummy5);
 		detailsPanel.add(TTL);			detailsPanel.add(ttl_detail);			detailsPanel.add(dummy6);
@@ -269,7 +272,7 @@ public class DDoSSimulation {
 		detailsPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		//history panel --------------------------------------------------------------------------------
 		
-		historyPanel = new JPanel(new GridLayout(2,1,3,3));
+		historyPanel = new JPanel();
 		historyPanel.setBorder(BorderFactory.createTitledBorder("Packages history"));
 		
 		packages_received_detail = new JTextArea(12,65);
@@ -277,19 +280,12 @@ public class DDoSSimulation {
 		packages_received_detail.setForeground(Color.RED);
 		packages_received_detail.setFont(terminalFont);
 		JScrollPane sp_packReceived = new JScrollPane(packages_received_detail);
-		/*
-		packages_sent_detail = new JTextArea(12,65);
-		packages_sent_detail.setBackground(Color.BLACK);
-		packages_sent_detail.setForeground(Color.MAGENTA);
-		packages_sent_detail.setFont(terminalFont);
-		JScrollPane sp_packSent = new JScrollPane(packages_sent_detail);
-		*/
 		
 		historyPanel.add(sp_packReceived);
-		//historyPanel.add(sp_packSent);
 		
 		computerDetailsPanel.add(historyPanel, BorderLayout.CENTER);
 		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
+		
 		// terminal tab --------------------------------------------------------------------------------
 		
 		terminal = new JTextArea(44,67);
@@ -358,7 +354,7 @@ public class DDoSSimulation {
 				globalMemoryConf = Integer.parseInt(memoryTF.getText());
 				globalPackageSizeConf = Integer.parseInt(packagesizeTF.getText());
 				
-				numSlavesTF.setEditable(false);
+				numSlavesChoice.setEnabled(false);
 				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
@@ -480,89 +476,6 @@ public class DDoSSimulation {
 		return cspeedBar;
 	}
 	
-	/*public void makeIPAddressConfigWindow() {
-		ipAddressConfig = new JFrame();
-		ipAddressConfig.setSize(WINDOW_WIDTH, WINDOW_HEIGHT/4);
-		ipMainPanel = new JPanel(new BorderLayout());
-		
-		JPanel topChoicePanel = new JPanel();
-		topChoicePanel.setBorder(BorderFactory.createTitledBorder("Choose way of configuring IP Addresses"));
-		
-		JButton r_default = new JButton("Default");		topChoicePanel.add(r_default);
-		JButton r_file = new JButton("From file");		topChoicePanel.add(r_file);
-		JButton r_user = new JButton("User input");		topChoicePanel.add(r_user);
-
-		ipMainPanel.add(topChoicePanel, BorderLayout.NORTH);
-		
-		JPanel filePanel = new JPanel();
-					
-		JButton buttonSubmit = new JButton("Submit");
-		ipMainPanel.add(buttonSubmit, BorderLayout.SOUTH);
-		
-		filePanel.setVisible(false);
-		ipMainPanel.add(filePanel, BorderLayout.CENTER);
-		
-		ipAddressConfig.add(ipMainPanel);
-		ipAddressConfig.setVisible(true);
-		ipAddressConfig.setResizable(true);
-		
-		r_file.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				r_default.setEnabled(false);
-				r_user.setEnabled(false);
-				
-				filePanel.setBorder(BorderFactory.createTitledBorder("Choose file with IP Addresses"));
-				JLabel pathL = new JLabel("Path: ");
-				JTextField pathTF = new JTextField(30);
-				filePanel.add(pathL);
-				filePanel.add(pathTF);
-				
-				fileInput = true;
-				filePanel.setVisible(true);
-			}
-		});
-		
-		//this must be global in this class, so method configureNetworkFromUserInput() can access this
-		ArrayList<JTextField> ipInputs = new ArrayList<JTextField>();
-		
-		// case when same button is pushed multiple times ? - lock this button too?
-		r_user.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				r_default.setEnabled(false);
-				r_file.setEnabled(false);
-				
-				filePanel.setBorder(BorderFactory.createTitledBorder("Type in ip addresses"));
-				filePanel.setLayout(new GridLayout(globalNumSlaves/2,2,5,5));
-				for (int i=0; i < globalNumSlaves; i++) {
-					JTextField ipInput = new JTextField(20);
-					ipInputs.add(ipInput);
-					filePanel.add(ipInput);
-				}
-				
-				userInput = true;
-				filePanel.setVisible(true);
-			}
-		});
-		
-		r_default.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				r_user.setEnabled(false);
-				r_file.setEnabled(false);
-				defaultInput = true;
-			}
-		});
-		
-		buttonSubmit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if (userInput) return; 		//configureNetworkFromUserInput();
-				else if (fileInput) return; //configureNetworkFromFileInput();
-				else if (defaultInput) configureNetworkByDefault();
-				
-				ipAddressConfig.setVisible(false);
-			}
-		});
-	}
-	*/
 	
 	private void configureNetworkByDefault() {
 		procGraphic.makeNetworkDefault();
@@ -574,7 +487,6 @@ public class DDoSSimulation {
 	public void showComputerDetails(Computer comp, int nodeID) {
 		id_detail.setText(": " + nodeID);
 		ipAddress_detail.setText(": " + comp.getIpAddress());
-		domain_detail.setText(": " + comp.getDomain());
 		type_detail.setText(": " + comp.getTypeString());
 		ttl_detail.setText(": " + comp.getTTL());
 		memory_detail.setText(": " + comp.getMemBuffSizeCurrent() + " / " + comp.getMemBuffSize());
@@ -593,21 +505,9 @@ public class DDoSSimulation {
 			packages_received_detail.append("________________\n");
 			numPackRec++;
 		}
-		/*int numPackSent = 0;
-		//packages_sent_detail.setText("SENT PACKAGES\n"+"total number - "+ comp.getNumberOfPackagesSent()+ "\n");
-		//packages_sent_detail.append("still in memory:\n\n");
-		 
-		Set<Package> sent = comp.getSentPackages();
-		for (Package pack: sent) {
-			packages_sent_detail.append("___PACKAGE "+numPackSent+"___\n");
-			packages_sent_detail.append("receiver IP: "+pack.getEdge().getNodeTo().getComputer().getIpAddress()+"\n");
-			packages_sent_detail.append("size: "+pack.getSize()+"\n");
-			packages_sent_detail.append("time sent: "+pack.getTimeStartSending()+"\n");
-			packages_sent_detail.append("time received: "+pack.getReceivedTime()+"\n");
-			packages_sent_detail.append("________________\n");
-			numPackSent++;
-		} */
-		
+
+		detailPanelVisible(true);
+		historyPanelVisible(true);		
 	}
 	
 	public void detailPanelVisible(boolean value) { detailsPanel.setVisible(value);}

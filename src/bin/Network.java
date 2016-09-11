@@ -111,6 +111,8 @@ public class Network {
 		for(Edge e: allEdges) {
 			if (e.getNodeFrom().equals(getMasterNode())) {
 				Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.EMAIL_VIRUS);
+				Packet packet = new TCPpacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), TCPpacket.SYN, DDoSSimulation.globalPackageSizeConf);
+				pack.setPacket(packet);
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
