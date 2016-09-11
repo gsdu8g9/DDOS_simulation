@@ -25,9 +25,7 @@ public class DDoSSimulation {
 	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
 							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 200;
 	
-	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
-	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeTCP = true, globalGraphTypeU45 = true;
+	public static boolean globalResourceTypeInternal = false, globalDDOSTypeDirect = true, globalPackageTypeTCP = false, globalGraphTypeU45 = true;
 	public static int globalNumSlaves =30, 
 					  globalNumMasterSlaves = 5;
 	public static int globalSpeedUpBar = 3,
@@ -36,7 +34,7 @@ public class DDoSSimulation {
 			          globalPackageSizeConf = 32;
 	public static int globalGenPackagePerSec = 2;	// from masters - other we adjust according to this
 					 
-	private JFrame window, popUpStart, ipAddressConfig;
+	private JFrame window, popUpStart;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
@@ -45,7 +43,6 @@ public class DDoSSimulation {
 	private JLabel id_detail, ipAddress_detail, ttl_detail, domain_detail, type_detail, memory_detail;
 	private JTextField numSlavesTF, ttlTF, memoryTF, packagesizeTF;
 	private Choice numSlavesChoice;
-	private boolean userInput = false, defaultInput = false, fileInput = false;
 	private JTextArea terminal, packages_received_detail, packages_sent_detail;
 	private JButton startDDoS;
 	
@@ -362,9 +359,7 @@ public class DDoSSimulation {
 				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
-				
-				globalGraphTypeU45 = globalDDOSTypeDirect? (globalNumSlaves <= 45 ? true : false ) : (globalNumSlaves <= 35 ? true : false);
-				
+					
 				submitConfiguration.setEnabled(false);
 				startInfectingMasters.setEnabled(true);
 				ping.setEnabled(true);
