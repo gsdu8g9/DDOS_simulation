@@ -13,7 +13,7 @@ public class Network {
 	private Vector<Node> reflectors = new Vector<Node>();
 	private Set<Edge> allEdges = new HashSet<Edge>();
 	private Map<String, Node> ipAddressesMap = new HashMap<String, Node>();			// map for fast ipAddress searching
-	private Node masterNode = null, targetNode = null, userNode = null;
+	private Node masterNode = null, targetNode = null, userNode = null, routerNode = null;
 	private int numPackages = 0;
 	private Edge connectionToUser = null, connectionToTarget = null;
 	
@@ -39,13 +39,24 @@ public class Network {
 	public Node findIPAddress(String ipAddress) { return ipAddressesMap.get(ipAddress); }
 	
 	public void addNode(Node n) {
-		if (n.getComputer().getType() == Computer.MASTER)
-			masterNode = n;
-		else if (n.getComputer().getType() == Computer.TARGET)
-			targetNode = n;
+		Node node = ipAddressesMap.get(n.getComputer().getIpAddress());
 		
-		allNodes.add(n);
-		ipAddressesMap.put(n.getComputer().getIpAddress(), n);
+		if ( targetNode != null && node != null) 
+		{	// node already exist, the second addition is router Node
+			routerNode = n;
+		}
+		else 
+		{
+			if (n.getComputer().getType() == Computer.MASTER)
+				masterNode = n;
+			else if (n.getComputer().getType() == Computer.TARGET)
+				targetNode = n;
+		}
+		if (node == null)
+		{
+			allNodes.add(n);
+			ipAddressesMap.put(n.getComputer().getIpAddress(), n);
+		}
 	}
 	
 	public void addMasterSlaveNode(Node n) {
@@ -61,6 +72,8 @@ public class Network {
 	public void addEdge(Edge e) {
 		allEdges.add(e);
 	}
+	
+	public Node getRouterNode() { return routerNode; }
 
 	public Edge getEdge(Node from, Node to) {
 		if (from == null || to == null) return null;
@@ -127,7 +140,11 @@ public class Network {
 		int inc = 1;
 		for (Node n: allNodes) {
 			if (n.getComputer().getType() == Computer.SLAVE) {
-				Edge e = getEdge(n, targetNode);
+				Edge e = null;
+				if (DDoSSimulation.globalPackageTypeTCP == true)
+					e = getEdge(n, targetNode);
+				else 
+					e = getEdge(n, routerNode);
 				Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, packageType);
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;

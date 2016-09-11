@@ -59,7 +59,11 @@ public class Node {
 	public Color getColor () {return color;}
 	
 	public Package attackTarget(int packageType) {
-		Edge e = network.getEdge(this, network.getTargetNode());
+		Edge e = null;
+		if (DDoSSimulation.globalPackageTypeTCP == true)
+			e = network.getEdge(this, network.getTargetNode());
+		else
+			e = network.getEdge(this, network.getRouterNode());
 		Package pack = new Package(e, 32, packageType);
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setTimeStartSending(currSec);

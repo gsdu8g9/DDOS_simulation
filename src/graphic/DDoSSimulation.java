@@ -25,9 +25,7 @@ public class DDoSSimulation {
 	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
 							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 200;
 	
-	public static final int CYN_FLOOD = 1, ICMP_FLOOD = 2;
-	
-	public static boolean globalResourceTypeInternal = true, globalDDOSTypeDirect = false, globalPackageTypeTCP = true, globalGraphTypeU45 = true;
+	public static boolean globalResourceTypeInternal = false, globalDDOSTypeDirect = true, globalPackageTypeTCP = false, globalGraphTypeU45 = true;
 	public static int globalNumSlaves =30, 
 					  globalNumMasterSlaves = 5;
 	public static int globalSpeedUpBar = 3,
@@ -358,9 +356,7 @@ public class DDoSSimulation {
 				ttlTF.setEditable(false);
 				memoryTF.setEditable(false);
 				packagesizeTF.setEditable(false);
-				
-				globalGraphTypeU45 = globalDDOSTypeDirect? (globalNumSlaves <= 45 ? true : false ) : (globalNumSlaves <= 35 ? true : false);
-				
+					
 				submitConfiguration.setEnabled(false);
 				startInfectingMasters.setEnabled(true);
 				ping.setEnabled(true);

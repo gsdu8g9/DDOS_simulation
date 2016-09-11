@@ -25,6 +25,7 @@ public class ProcessingSimulation extends PApplet{
 	
 	private long lastMSWave = 0, lastSRWave = 0, lastToTargetWave, lastVirusWave;
 	private Network network;
+	private Node routerNode = null;
 	private DDoSSimulation GUIcontrol;
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
 	private int prevRandomX = 0, prevRandomY = 0;
@@ -68,23 +69,36 @@ public class ProcessingSimulation extends PApplet{
 		PImage imgClear = loadImage("server.png");
 		PImage imgMasterSlave = loadImage("computer-success.png");
 		PImage imgInfected = loadImage("computer-alert.png");
+		PImage imgRouter = loadImage("router.png");
+		
 		PFont font = loadFont("coder-15.vlw");
 		
 		stroke(Color.LIGHT_GRAY.getRed(), Color.LIGHT_GRAY.getGreen(), Color.LIGHT_GRAY.getBlue());
         strokeWeight(3);
         
+        int dots = 100;
+        if (DDoSSimulation.globalPackageTypeTCP == false) dots = 50;
+        
         // connection from user
-        for (int i = 0; i <= 100; i++) {
-          float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/100);
-          float y = lerp((float)network.getTargetNode().getY() - 10, (float)network.getUserNode().getY() - 10, (float)i/100);
+        for (int i = 0; i <= dots; i++) {
+          float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/dots);
+          float y = lerp((float)network.getTargetNode().getY() - 10, (float)network.getUserNode().getY() - 10, (float)i/dots);
           point(x, y);
         }
         
         // connection to user
-        for (int i = 0; i <= 100; i++) {
-            float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/100);
-            float y = lerp((float)network.getTargetNode().getY() + 15, (float)network.getUserNode().getY() + 15, (float)i/100);
+        for (int i = 0; i <= dots; i++) {
+            float x = lerp((float)network.getTargetNode().getX(), (float)network.getUserNode().getX(), (float)i/dots);
+            float y = lerp((float)network.getTargetNode().getY() + 15, (float)network.getUserNode().getY() + 15, (float)i/dots);
             point(x, y);
+        }
+        
+        if (DDoSSimulation.globalPackageTypeTCP == false) {
+        	for (int i = 0; i <= dots; i++) {
+                float x = lerp((float)network.getTargetNode().getX(), (float)network.getRouterNode().getX(), (float)i/dots);
+                float y = lerp((float)network.getTargetNode().getY() + 15, (float)network.getRouterNode().getY() + 15, (float)i/dots);
+                point(x, y);
+            }
         }
 		
 		stroke(0);
@@ -124,6 +138,10 @@ public class ProcessingSimulation extends PApplet{
 			  
 		stroke(0);
 		fill(175);
+		
+		if (DDoSSimulation.globalPackageTypeTCP == false)
+			ellipse(network.getRouterNode().getX(), network.getRouterNode().getY(), 16, 16);
+		
 		ellipse(network.getTargetNode().getX(), network.getTargetNode().getY(), 16, 16);
 		
 		//draw edges
@@ -145,9 +163,15 @@ public class ProcessingSimulation extends PApplet{
 		image(imgMaster, network.getMasterNode().getX()-40, network.getMasterNode().getY()-38, 80, 60);
 		image(imgTaget, network.getTargetNode().getX()-40, network.getTargetNode().getY()-40, 80, 80);
 		
+		if (DDoSSimulation.globalPackageTypeTCP == false) 
+			image(imgRouter, network.getRouterNode().getX()-40, network.getRouterNode().getY()-45, 80, 80);
+
 		textFont(font);
 		fill(0);
 		text("TARGET", network.getTargetNode().getX()-30, network.getTargetNode().getY()+45);
+		
+		if (DDoSSimulation.globalPackageTypeTCP == false)
+			text("ROUTER", network.getRouterNode().getX()-30, network.getRouterNode().getY()+45);
 		
 		//draw slaves
 		Set<Node> allNodes = network.getAllNodes();
@@ -324,8 +348,8 @@ public class ProcessingSimulation extends PApplet{
 		else if ((targetMemory) > 30 && (targetMemory) < 60) color = Color.ORANGE;
 		else color = Color.RED;
 		
-		int x = network.getTargetNode().getX();
-		int y = network.getTargetNode().getY();
+		int x = network.getRouterNode().getX();
+		int y = network.getRouterNode().getY();
 		
 		fill(0);
 		text("TARGET MEMORY:", 25, y + 17);
@@ -624,9 +648,20 @@ public class ProcessingSimulation extends PApplet{
 		network.addNode(masterNode);
 		
 		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
-		Node targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
+		Node targetNode = null;
+		if (DDoSSimulation.globalPackageTypeTCP == true)
+			targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
+		else
+			targetNode = new Node(network, targetComputer, APPLET_WIDTH/2 + APPLET_WIDTH/4, APPLET_HEIGHT-50);
 		targetNode.setID(505);
 		network.addNode(targetNode);
+		
+		if (DDoSSimulation.globalPackageTypeTCP == false)	//ICMP
+		{
+			Node routerNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
+			routerNode.setID(506);
+			network.addNode(routerNode);
+		}
 		
 		if (DDoSSimulation.globalDDOSTypeDirect) {
 			if (DDoSSimulation.globalGraphTypeU45) { 	
@@ -705,7 +740,7 @@ public class ProcessingSimulation extends PApplet{
 				makeNeighbours(nodeSlave, reflector);
 				nodeSlave.addSlave(reflector); //not sure if this should stay
 			}
-			makeNeighbours(reflector, network.getTargetNode());
+			makeNeighbours(reflector, network.getRouterNode());
 		}
 				
 		network.createConnectionWithUser();
@@ -923,7 +958,7 @@ public class ProcessingSimulation extends PApplet{
 				makeNeighbours(slave, reflector);
 				slave.addSlave(reflector); //not sure if this should stay
 			}
-			makeNeighbours(reflector, network.getTargetNode());
+			makeNeighbours(reflector, network.getRouterNode());
 		}
 		
 		network.createConnectionWithUser();
