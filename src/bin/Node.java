@@ -66,11 +66,11 @@ public class Node {
 		if (DDoSSimulation.globalPackageTypeTCP) {
 			e = network.getEdge(this, network.getTargetNode());
 			packet = new TCPpacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), TCPpacket.SYN, DDoSSimulation.globalPackageSizeConf);
-			pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.SYN_PACKAGE, packet);
+			pack = new Package(e, Package.SYN_PACKAGE, packet);
 		} else {
 			e = network.getEdge(this, network.getRouterNode());
 			packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
-			pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.ICMP_PACKAGE, packet);
+			pack = new Package(e, Package.ICMP_PACKAGE, packet);
 		}
 		
 		
@@ -86,7 +86,7 @@ public class Node {
 		Set<Package> retSet = new HashSet<Package>();
 		for(Edge e: allReflected) {
 			Packet packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
-			Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.ICMP_PACKAGE, packet);
+			Package pack = new Package(e, Package.ICMP_PACKAGE, packet);
 			long currSec = System.currentTimeMillis()/1000;
 			pack.setTimeStartSending(currSec);
 			pack.setStatus(Package.WAITING);
@@ -146,7 +146,7 @@ public class Node {
 	}
 
 	private Node processCYNpackage(Package pack) {
-		if (infected) {
+		if (infected || this.getComputer().getType() == Computer.TARGET) {
 			if (computer.getType() == Computer.SLAVE) {
 				//slave sends new package to target direct 
 				Package newPack = attackTarget(Package.SYN_PACKAGE);
@@ -154,7 +154,7 @@ public class Node {
 			}
 			else if (computer.getType() == Computer.TARGET) {
 				Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
-				computer.increaseMemory(pack.getSize());
+				computer.increaseMemory(DDoSSimulation.globalPackageSizeConf);
 				return retAckNode;
 			}
 		}
@@ -162,7 +162,7 @@ public class Node {
 	}
 
 	private Node processICMPpackage(Package pack) {
-		if (infected) {
+		if (infected || this.getComputer().getType() == Computer.REFLECTING || this.getComputer().getType() == Computer.TARGET) {
 			if (computer.getType() == Computer.SLAVE) {
 				//slave sends to reflecting nodes
 				Set<Package> newPackages = attackReflector(Package.ICMP_PACKAGE);
@@ -171,7 +171,7 @@ public class Node {
 			}
 			else if (computer.getType() == Computer.TARGET) {
 				Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
-				computer.increaseMemory(pack.getSize());
+				computer.increaseMemory(DDoSSimulation.globalPackageSizeConf);
 				return retAckNode;
 			} 
 			else if (computer.getType() == Computer.REFLECTING) {
