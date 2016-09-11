@@ -40,7 +40,7 @@ public class Edge {
 		if (pack.getType() == Package.EMAIL_VIRUS)
 			terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 
 							" to " + nodeTo.getComputer().getIpAddress());
-		else if (pack.getType() == Package.CYN_PACKAGE)
+		else if (pack.getType() == Package.SYN_PACKAGE)
 			terminal.append("\n>Sending CYN package from " + nodeFrom.getComputer().getIpAddress() + 
 					" to " + nodeTo.getComputer().getIpAddress());
 	} 

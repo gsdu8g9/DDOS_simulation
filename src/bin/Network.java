@@ -15,7 +15,8 @@ public class Network {
 	private Map<String, Node> ipAddressesMap = new HashMap<String, Node>();			// map for fast ipAddress searching
 	private Node masterNode = null, targetNode = null, userNode = null, routerNode = null;
 	private int numPackages = 0;
-	private Edge connectionToUser = null, connectionToTarget = null;
+	private boolean firstTimeSending = true;
+	private Edge connectionToUser = null, connectionToTarget = null; 
 	
 	public static long TIME_WAIT_PROCESSING = 2000;		// backdoor for this - to faster or slower
 	
@@ -123,9 +124,9 @@ public class Network {
 		int inc = 1;
 		for(Edge e: allEdges) {
 			if (e.getNodeFrom().equals(getMasterNode())) {
-				Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.EMAIL_VIRUS);
-				Packet packet = new TCPpacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), TCPpacket.SYN, DDoSSimulation.globalPackageSizeConf);
-				pack.setPacket(packet);
+				Packet packet = new CommandPacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), CommandPacket.INFECT);
+				Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.EMAIL_VIRUS, packet);
+				
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
@@ -136,7 +137,7 @@ public class Network {
 		}
 	}
 
-	public void sendFromAllSlaves(int packageType) {
+	/*public void sendFromAllSlaves(int packageType) {
 		int inc = 1;
 		for (Node n: allNodes) {
 			if (n.getComputer().getType() == Computer.SLAVE) {
@@ -153,14 +154,31 @@ public class Network {
 				pack.setStatus(Package.WAITING);
 			}
 		}
-	}
+	} */
 	
-	public void sendFromAllMasters(int packageType) {
+	public void sendFromAllMasters() {
 		int inc = 1;
 		for (Node n: masterSlaves) {
 			for (Node s: n.getMySlaves()) {
 				Edge e = getEdge(n, s);
-				Package pack = new Package(e, 32, packageType);
+				Packet packet = null;
+				Package pack = null;
+				
+				if (firstTimeSending) {
+					packet = new CommandPacket(n.getComputer().getIpAddress(), s.getComputer().getIpAddress(), CommandPacket.INFECT);
+					pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.COMMAND, packet);
+				}
+				else {
+					if (DDoSSimulation.globalPackageTypeTCP) {
+						packet = new CommandPacket(n.getComputer().getIpAddress(), s.getComputer().getIpAddress(), CommandPacket.GEN_SYN);
+						pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.COMMAND, packet);
+					}
+					else {
+						packet = new CommandPacket(n.getComputer().getIpAddress(), s.getComputer().getIpAddress(), CommandPacket.GEN_ECHO_REQ);
+						pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.COMMAND, packet);
+					}
+				}
+				
 				// for faster simulation -> instead of seconds use milliseconds !
 				long currSec = System.currentTimeMillis()/1000;
 				pack.setTimeStartSending(currSec + inc++);
@@ -169,6 +187,7 @@ public class Network {
 				
 			}
 		}
+		firstTimeSending = false;
 		procSim.shuffleMS();
 		
 	}

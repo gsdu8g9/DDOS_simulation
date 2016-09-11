@@ -9,17 +9,14 @@ public class ICMPpacket extends Packet{
 	private int code = 0;				//1B - always 0
 	private String identifier = "";		//2B
 	
-	public ICMPpacket(int sizeData, String identifier, int type, int size) {
+	public ICMPpacket(String identifier, int type, int sizeData) {
 		packetType = Packet.ICMP;
-		this.setIdentifier(identifier);
+		this.identifier = identifier;
 		this.dataSize = sizeData;
 		generateDataContent();
 		this.type = type;
-		dataSize = size;
 	}
 	
-	public void setIdentifier(String identifier) { this.identifier = identifier; }
-
 	public int getType() { return type; }
 	
 	public String toString() {

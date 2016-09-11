@@ -16,15 +16,19 @@ public class CommandPacket extends Packet{
 	
 	public String toString() {
 		String s = "";
-		if (type == INFECT)
+		if (getType() == INFECT)
 			s += "Infecting command";
-		else if (type == GEN_ECHO_REQ)
+		else if (getType() == GEN_ECHO_REQ)
 			s += "Generate ECHO request packets command";
-		else if (type == GEN_SYN)
+		else if (getType() == GEN_SYN)
 			s += "Generate SYN packets command";
 		
 		s += "\n From: "+ source +"\n To: "+ destination +"\n";
 		return s;		
 	}
-	
+
+	public int getType() {
+		return type;
+	}
+
 }

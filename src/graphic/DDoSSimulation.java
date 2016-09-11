@@ -17,7 +17,6 @@ import javax.swing.event.ChangeListener;
 
 import bin.*;
 import bin.Package;
-import javafx.scene.layout.Border;
 import processing.core.*;
 
 public class DDoSSimulation {
@@ -47,6 +46,7 @@ public class DDoSSimulation {
 	private JButton startDDoS;
 	
 	private int packageType = 1, lastInputTerminal = 1;
+	private boolean ddosStarted = false;
 	
 	private ProcessingSimulation procGraphic = null;
 	private String[] pArgs = {"ProcessingSimulation "};
@@ -378,6 +378,7 @@ public class DDoSSimulation {
 				
 				procGraphic.startDDos();
 				startDDoS.setEnabled(false);
+				ddosStarted = true;
 				pausePlay.setEnabled(true);
 			}
 		});
@@ -386,9 +387,11 @@ public class DDoSSimulation {
 			public void actionPerformed(ActionEvent e) {
 				if (procGraphic.getStage() == ProcessingSimulation.STAGE_PAUSE) { //continue
 					procGraphic.continueSimulation();
+					if (!ddosStarted) startDDoS.setEnabled(true);
 				}
 				else { //pause
 					procGraphic.pauseSimulation();
+					startDDoS.setEnabled(false);
 				}
 			}
 		});

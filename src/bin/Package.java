@@ -1,7 +1,7 @@
 package bin;
 
 public class Package {
-	public static final int EMAIL_VIRUS = 0, CYN_PACKAGE = 1, ICMP_PACKAGE = 2;
+	public static final int EMAIL_VIRUS = 0, SYN_PACKAGE = 1, ICMP_PACKAGE = 2, COMMAND = 3;
 	public static final int INIT = 0, WAITING = 1, TRAVELING = 2, RECEIVED = 3;
 	
 	private Packet packet;
@@ -12,13 +12,12 @@ public class Package {
 	private int status = Package.INIT;
 	private long timeStartSending = 0, timeReceived = 0;
 	
-	public Package(Edge e, int size, int type) {
+	public Package(Edge e, int size, int type, Packet pack) {
 		edge = e;
 		this.size = size;
 		this.type = type;
+		packet = pack;
 	}
-	
-	public void setPacket(Packet pack) { packet = pack; }
 	
 	public Packet getPacket() { return packet; }
 	

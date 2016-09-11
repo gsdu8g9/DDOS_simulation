@@ -60,11 +60,20 @@ public class Node {
 	
 	public Package attackTarget(int packageType) {
 		Edge e = null;
-		if (DDoSSimulation.globalPackageTypeTCP == true)
+		Packet packet = null;
+		Package pack = null;
+		
+		if (DDoSSimulation.globalPackageTypeTCP) {
 			e = network.getEdge(this, network.getTargetNode());
-		else
+			packet = new TCPpacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), TCPpacket.SYN, DDoSSimulation.globalPackageSizeConf);
+			pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.SYN_PACKAGE, packet);
+		} else {
 			e = network.getEdge(this, network.getRouterNode());
-		Package pack = new Package(e, 32, packageType);
+			packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
+			pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.ICMP_PACKAGE, packet);
+		}
+		
+		
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setTimeStartSending(currSec);
 		pack.setStatus(Package.WAITING);
@@ -76,7 +85,8 @@ public class Node {
 		Set<Edge> allReflected = network.getAllReflectorEdges(this);
 		Set<Package> retSet = new HashSet<Package>();
 		for(Edge e: allReflected) {
-			Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, packageType);
+			Packet packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
+			Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, Package.ICMP_PACKAGE, packet);
 			long currSec = System.currentTimeMillis()/1000;
 			pack.setTimeStartSending(currSec);
 			pack.setStatus(Package.WAITING);
@@ -96,7 +106,8 @@ public class Node {
 		
 		switch (pack.getType()) {
 			case Package.EMAIL_VIRUS :  processVirus(pack); return null;
-			case Package.CYN_PACKAGE: return processCYNpackage(pack);
+			case Package.COMMAND :  processCommand(pack); return null;
+			case Package.SYN_PACKAGE: return processCYNpackage(pack);
 			case Package.ICMP_PACKAGE: return processICMPpackage(pack);
 			default: return null;
 		}
@@ -110,7 +121,9 @@ public class Node {
 		if (this.getComputer().isMemoryFull() == false) {
 			// odraditi neki momenat da sto je target optereceniji sa memorijom, da to sporije odgovara na ping usera
 			// tako generalno funckionise, kapiram da se moze srediti standardno sa nekim onim vremenima
-			retAck = new OutsidePackage(this, network.getUserNode().getX(), network.getUserNode().cordY, OutsidePackage.TARGET_PING);
+			
+			Packet packet = new ICMPpacket(network.getUserNode().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
+			retAck = new OutsidePackage(this, network.getUserNode().getX(), network.getUserNode().cordY, OutsidePackage.TARGET_PING, packet);
 			long currSec = System.currentTimeMillis()/1000;
 			retAck.setTimeCreated(currSec);
 		}
@@ -122,33 +135,51 @@ public class Node {
 		network.getProcSim().infected++;
 	}
 	
+	private void processCommand(Package command) {
+		CommandPacket cmp = (CommandPacket)command.getPacket();
+		if (cmp.getType() == CommandPacket.INFECT)
+			infected = true;
+		else if (cmp.getType() == CommandPacket.GEN_SYN)
+			processCYNpackage(null);
+		else if (cmp.getType() == CommandPacket.GEN_ECHO_REQ)
+			processICMPpackage(null);
+	}
+
 	private Node processCYNpackage(Package pack) {
-		if (computer.getType() == Computer.SLAVE) {
-			if (DDoSSimulation.globalDDOSTypeDirect) { //slave sends new package to target direct 
-				Package newPack = attackTarget(pack.getType());
+		if (infected) {
+			if (computer.getType() == Computer.SLAVE) {
+				//slave sends new package to target direct 
+				Package newPack = attackTarget(Package.SYN_PACKAGE);
 				network.getProcSim().addPackageToQueue(newPack);
 			}
-			else { 										//slave sends to reflecting nodes
-				Set<Package> newPackages = attackReflector(pack.getType());
-				for(Package p: newPackages)
-					network.getProcSim().addPackageToQueue(p);
+			else if (computer.getType() == Computer.TARGET) {
+				Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
+				computer.increaseMemory(pack.getSize());
+				return retAckNode;
 			}
-			return null;	
-		}
-		else if (computer.getType() == Computer.TARGET) {
-			Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
-			computer.increaseMemory(pack.getSize());
-			return retAckNode;
-		} 
-		else if (computer.getType() == Computer.REFLECTING) {
-			Package newPack = attackTarget(pack.getType());
-			network.getProcSim().addPackageToQueue(newPack);
 		}
 		return null;
 	}
 
 	private Node processICMPpackage(Package pack) {
+		if (infected) {
+			if (computer.getType() == Computer.SLAVE) {
+				//slave sends to reflecting nodes
+				Set<Package> newPackages = attackReflector(Package.ICMP_PACKAGE);
+				for(Package p: newPackages)
+					network.getProcSim().addPackageToQueue(p);
+			}
+			else if (computer.getType() == Computer.TARGET) {
+				Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
+				computer.increaseMemory(pack.getSize());
+				return retAckNode;
+			} 
+			else if (computer.getType() == Computer.REFLECTING) {
+				Package newPack = attackTarget(Package.ICMP_PACKAGE);
+				network.getProcSim().addPackageToQueue(newPack);
+			}
+		}
 		return null;
 	}
-	
+
 }

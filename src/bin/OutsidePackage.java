@@ -11,21 +11,24 @@ public class OutsidePackage {
 	private float currentX = 0, currentY = 0;
 	private long timeCreated = 0;
 	
-	public OutsidePackage(Node target, float coordXTo, float coordYTo) {
+	public OutsidePackage(Node target, float coordXTo, float coordYTo, Packet pack) {
 		this.startNode = target;
 		this.currentX = startNode.getX();
 		this.currentY = startNode.getY();
 		this.coordXTo = coordXTo;
 		this.coordYTo = coordYTo;
+		packet = pack;
+		
 	}
 	
-	public OutsidePackage(Node target, float coordXTo, float coordYTo, int type) {
+	public OutsidePackage(Node target, float coordXTo, float coordYTo, int type, Packet pack) {
 		this.startNode = target;
 		this.currentX = startNode.getX();
 		this.currentY = startNode.getY();
 		this.coordXTo = coordXTo;
 		this.coordYTo = coordYTo;
 		this.type = type;
+		packet = pack;
 	}
 	
 	public int getType() { return type; }
@@ -62,8 +65,4 @@ public class OutsidePackage {
 		return packet;
 	}
 
-	public void setPacket(Packet packet) {
-		this.packet = packet;
-	}
-	
 }
