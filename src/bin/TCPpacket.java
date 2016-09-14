@@ -15,10 +15,22 @@ public class TCPpacket extends Packet{
 	public TCPpacket(String source, String destination, int type, int size) {
 		this.source = source;
 		this.destination = destination;
-		sequenceNumber = makeRandom4BNumber();
-		ackNumber = makeRandom4BNumber();
+		this.sequenceNumber = makeRandom4BNumber();
+		this.ackNumber = makeRandom4BNumber();
 		this.type = type;
-		dataSize = size;
+		this.dataSize = size;
+		this.generateDataContent();
+	}
+	
+	public TCPpacket(String source, String destination, int type, int size, int checksum) {
+		this.source = source;
+		this.destination = destination;
+		this.sequenceNumber = makeRandom4BNumber();
+		this.ackNumber = makeRandom4BNumber();
+		this.type = type;
+		this.dataSize = size;
+		this.checksum = checksum;
+		this.generateDataContent();
 	}
 	
 	private String makeRandom4BNumber() {

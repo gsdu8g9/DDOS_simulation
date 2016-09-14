@@ -66,7 +66,7 @@ public class Node {
 		if (DDoSSimulation.globalPackageTypeTCP) {
 			e = network.getEdge(this, network.getTargetNode());
 			packet = new TCPpacket(e.getNodeFrom().getComputer().getIpAddress(), e.getNodeTo().getComputer().getIpAddress(), TCPpacket.SYN, DDoSSimulation.globalPackageSizeConf);
-			pack = new Package(e, Package.SYN_PACKAGE, packet);
+			pack = new Package(e, Package.TCP_PACKAGE, packet);
 		} else {
 			e = network.getEdge(this, network.getRouterNode());
 			packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
@@ -107,7 +107,7 @@ public class Node {
 		switch (pack.getType()) {
 			case Package.EMAIL_VIRUS :  processVirus(pack); return null;
 			case Package.COMMAND :  processCommand(pack); return null;
-			case Package.SYN_PACKAGE: return processCYNpackage(pack);
+			case Package.TCP_PACKAGE: return processSYNpackage(pack);
 			case Package.ICMP_PACKAGE: return processICMPpackage(pack);
 			default: return null;
 		}
@@ -140,16 +140,16 @@ public class Node {
 		if (cmp.getType() == CommandPacket.INFECT)
 			infected = true;
 		else if (cmp.getType() == CommandPacket.GEN_SYN)
-			processCYNpackage(null);
+			processSYNpackage(null);
 		else if (cmp.getType() == CommandPacket.GEN_ECHO_REQ)
 			processICMPpackage(null);
 	}
 
-	private Node processCYNpackage(Package pack) {
+	private Node processSYNpackage(Package pack) {
 		if (infected || this.getComputer().getType() == Computer.TARGET) {
 			if (computer.getType() == Computer.SLAVE) {
 				//slave sends new package to target direct 
-				Package newPack = attackTarget(Package.SYN_PACKAGE);
+				Package newPack = attackTarget(Package.TCP_PACKAGE);
 				network.getProcSim().addPackageToQueue(newPack);
 			}
 			else if (computer.getType() == Computer.TARGET) {

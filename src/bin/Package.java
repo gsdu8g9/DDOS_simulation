@@ -3,7 +3,7 @@ package bin;
 import graphic.DDoSSimulation;
 
 public class Package {
-	public static final int EMAIL_VIRUS = 0, SYN_PACKAGE = 1, ICMP_PACKAGE = 2, COMMAND = 3;
+	public static final int EMAIL_VIRUS = 0, TCP_PACKAGE = 1, ICMP_PACKAGE = 2, COMMAND = 3;
 	public static final int INIT = 0, WAITING = 1, TRAVELING = 2, RECEIVED = 3;
 	
 	private Packet packet;
