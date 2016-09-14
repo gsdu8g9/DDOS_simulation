@@ -108,7 +108,7 @@ public class ProcessingSimulation extends PApplet{
 		fill(0);
 		text("ATTACKER", network.getMasterNode().getX()-35, network.getMasterNode().getY()-40);
 
-		//------------should appear only when DDoSSimulation.globalNumSlaves > 60
+		//------------should appear only when DDoSSimulation.globalNumSlaves > 45
 		if (!DDoSSimulation.globalGraphTypeU45) {
 			if (DDoSSimulation.globalDDOSTypeDirect) {
 				textFont(font);
@@ -153,7 +153,7 @@ public class ProcessingSimulation extends PApplet{
 			}
 			else {
 				stroke(e.getNodeFrom().getColor().getRed(), e.getNodeFrom().getColor().getGreen(), e.getNodeFrom().getColor().getBlue());
-				if (DDoSSimulation.globalGraphTypeU45) strokeWeight(3);
+				if (DDoSSimulation.globalGraphTypeU45 && DDoSSimulation.globalDDOSTypeDirect) strokeWeight(3);
 				else strokeWeight(1);
 			}
 			line(e.getNodeFrom().getX(), e.getNodeFrom().getY(), e.getNodeTo().getX(), e.getNodeTo().getY());
@@ -293,7 +293,6 @@ public class ProcessingSimulation extends PApplet{
 				image(networkBackground, 0, 0, APPLET_WIDTH, APPLET_HEIGHT);
 			}
 
-			// insert part for pause stage
 			if (mousePressed == true) checkClickedComputer(mouseX, mouseY);
 
 			if (stage == ProcessingSimulation.STAGE_ATTACKING || stage == ProcessingSimulation.STAGE_INFECTING_VIRUS) {
@@ -547,7 +546,7 @@ public class ProcessingSimulation extends PApplet{
 		pack.setY(y);
 		
 		//for real simulation the packages travel on edges
-		if (!DDoSSimulation.globalGraphTypeU45 || !DDoSSimulation.globalDDOSTypeDirect) {
+		if (!DDoSSimulation.globalGraphTypeU45) {
 			blinkEdges(pack); 
 			fixedPackage= true;
 			if (fixedX == 0 || fixedY == 0) {
@@ -567,19 +566,40 @@ public class ProcessingSimulation extends PApplet{
 		
 		stroke(0);
 		fill(175);
-
+		
+		int imgX = PIXEL_RANGE_NODE/2;
+		int imgY = PIXEL_RANGE_NODE/2;
+		int moveX = 15;
+		
 		PImage img;
-		if ((pack.getType() == Package.EMAIL_VIRUS) ||(pack.getType() == Package.COMMAND) ) 
+		if (pack.getType() == Package.EMAIL_VIRUS) 
 			img = loadImage("email2.png");
-		else if ((pack.getType() == Package.SYN_PACKAGE || pack.getType() == Package.ICMP_PACKAGE ) && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
+		else if (pack.getType() == Package.COMMAND) {
+			CommandPacket command = (CommandPacket)pack.getPacket();
+			if (command.getType() == CommandPacket.GEN_SYN) {
+				img = loadImage("rect.png");
+				imgX = 40;
+				imgY = 60;
+				moveX = 30;
+			}
+			else if (command.getPacketType() == CommandPacket.GEN_ECHO_REQ) {
+				img = loadImage("rect.png");
+				imgX = 40;
+				imgY = 60;
+				moveX = 30;
+			}
+			else
+				img = loadImage("email2.png");	//same as for infecting
+		}
+		else if ((pack.getType() == Package.TCP_PACKAGE || pack.getType() == Package.ICMP_PACKAGE ) && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
 			img = loadImage("toTarget.png");
 		else 
 			img = loadImage("spoofedPackage.png");
-		
+
 		if (fixedPackage)
-			image(img, fixedX-15, fixedY, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+			image(img, fixedX-moveX, fixedY, imgY, imgX);
 		else
-			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
+			image(img, x-moveX, y, imgY, imgX);
 	}
 
 	private void blinkEdges(Package pack) {
@@ -622,7 +642,7 @@ public class ProcessingSimulation extends PApplet{
 		}
 		prevRandomX = (int)randomX;
 
-		Packet packet = new TCPpacket(network.getTargetNode().getComputer().getIpAddress(), "???.???.???.???", TCPpacket.ACK, DDoSSimulation.globalPackageSizeConf);
+		Packet packet = new TCPpacket(network.getTargetNode().getComputer().getIpAddress(), "???.???.???.???", TCPpacket.ACK, DDoSSimulation.globalPackageSizeConf, pack.getPacket().getChecksum()+1);
 		OutsidePackage unknown = new OutsidePackage(pack.getEdge().getNodeTo(), randomX, randomY, packet);
 
 		long currSec = System.currentTimeMillis();
@@ -638,7 +658,7 @@ public class ProcessingSimulation extends PApplet{
 		}
 		else {
 			Node retNode = pack.getEdge().getNodeTo().processPackage(pack);
-			if (pack.getType() == Package.SYN_PACKAGE) {	
+			if (pack.getType() == Package.TCP_PACKAGE) {	
 				if ((retNode == null) && (pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)) drawAckUnknown(pack);	// spoofed ip 
 			}
 		}
@@ -988,15 +1008,19 @@ public class ProcessingSimulation extends PApplet{
 
 		Vector<Node> reflectors = network.getReflectorNodes();
 		Vector<Node> slaves = network.getSlaveNodes();
-
+		
 		for(Node reflector: reflectors) {
-			for(Node slave: slaves) {
-				makeNeighbours(slave, reflector);
-				slave.addSlave(reflector); //not sure if this should stay
+			for(int i = 0; i < slaves.size()/2; i++) {
+
+				Random rand = new Random();
+				int slaveIndex = rand.nextInt(slaves.size());
+				Node nodeSlave = slaves.get(slaveIndex);
+				makeNeighbours(nodeSlave, reflector);
+				nodeSlave.addSlave(reflector); //not sure if this should stay
 			}
 			makeNeighbours(reflector, network.getRouterNode());
 		}
-
+		
 		network.createConnectionWithUser();
 	}
 
