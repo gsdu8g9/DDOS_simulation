@@ -509,7 +509,12 @@ public class ProcessingSimulation extends PApplet{
 	private void drawPackage_Helper(Package pack) {
 		float x = pack.getX();
 		float y = pack.getY();
-
+		
+		float fixedX = pack.getFixedX();
+		float fixedY = pack.getFixedY();
+		
+		boolean fixedPackage = false;
+		
 		// to speed up more 
 		if (travellingPackages.size() >= 20) {
 			speedUp = 25;
@@ -522,11 +527,13 @@ public class ProcessingSimulation extends PApplet{
 
 		float speedX = 0;
 		float speedY = 1;
+		boolean minus = false;
 
 		if (pack.getEdge().getNodeFrom().getX() > pack.getEdge().getNodeTo().getX()) {
 			speedX = (float)(pack.getEdge().getNodeFrom().getX() - pack.getEdge().getNodeTo().getX()) / 
 					(float)(pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY());
 			x = x - speedX*speedUp;
+			minus = true;
 		}
 		else if (pack.getEdge().getNodeFrom().getX() < pack.getEdge().getNodeTo().getX()) {
 			speedX = (float)(pack.getEdge().getNodeTo().getX() - pack.getEdge().getNodeFrom().getX()) / 
@@ -538,27 +545,41 @@ public class ProcessingSimulation extends PApplet{
 
 		pack.setX(x);
 		pack.setY(y);
-
-		if (DDoSSimulation.globalGraphTypeU45) {
-			if (DDoSSimulation.globalDDOSTypeDirect == true || 
-					(pack.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER_SLAVE || 
-					pack.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER)) {
-				stroke(0);
-				fill(175);
-
-				PImage img;
-				if ((pack.getType() == Package.EMAIL_VIRUS) ||(pack.getType() == Package.COMMAND) ) 
-					img = loadImage("email2.png");
-				else if ((pack.getType() == Package.SYN_PACKAGE || pack.getType() == Package.ICMP_PACKAGE ) && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
-					img = loadImage("toTarget.png");
-				else 
-					img = loadImage("spoofedPackage.png");
-
-				image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+		
+		//for real simulation the packages travel on edges
+		if (!DDoSSimulation.globalGraphTypeU45 || !DDoSSimulation.globalDDOSTypeDirect) {
+			blinkEdges(pack); 
+			fixedPackage= true;
+			if (fixedX == 0 || fixedY == 0) {
+				Random rand = new Random();
+				int typeFrom = pack.getEdge().getNodeFrom().getComputer().getType();
+				
+				int high = typeFrom == Computer.MASTER ? 40: typeFrom == Computer.MASTER_SLAVE ? 70 : typeFrom == Computer.SLAVE ? 170 : 45;
+				int low = 12;
+				float speed = rand.nextInt(high - low) + low;
+				if (minus) fixedX = x - speedX * speed; 
+				else fixedX = x + speedX * speed; 
+				fixedY = y+ speedY* speed;
+				pack.setFixedX(fixedX);
+				pack.setFixedY(fixedY);
 			}
-			else blinkEdges(pack);
 		}
-		else blinkEdges(pack);
+		
+		stroke(0);
+		fill(175);
+
+		PImage img;
+		if ((pack.getType() == Package.EMAIL_VIRUS) ||(pack.getType() == Package.COMMAND) ) 
+			img = loadImage("email2.png");
+		else if ((pack.getType() == Package.SYN_PACKAGE || pack.getType() == Package.ICMP_PACKAGE ) && pack.getEdge().getNodeTo().getComputer().getType() == Computer.TARGET)
+			img = loadImage("toTarget.png");
+		else 
+			img = loadImage("spoofedPackage.png");
+		
+		if (fixedPackage)
+			image(img, fixedX-15, fixedY, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2); 
+		else
+			image(img, x-15, y, PIXEL_RANGE_NODE/2, PIXEL_RANGE_NODE/2);
 	}
 
 	private void blinkEdges(Package pack) {
@@ -865,8 +886,13 @@ public class ProcessingSimulation extends PApplet{
 	public void checkClickedPackages(int X, int Y) {
 
 		for (Package p : travellingPackages) {
-			if ((X >= p.getX()-10) && (X <= p.getX()+10) &&
-					(Y >= p.getY()-10) && (Y <= p.getY()+10)) {
+			float x,y;
+			
+			if (!DDoSSimulation.globalGraphTypeU45) {x = p.getFixedX(); y = p.getFixedY();}
+			else {x = p.getX(); y = p.getY();}
+			
+			if ((X >= x - 10) && (X <= x + 10) &&
+					(Y >= y - 10) && (Y <= y + 10)) {
 				//clicked on pack -> show details
 				if (p.getPacket() != null)
 					GUIcontrol.makePacketWindow(p.getPacket().toString());

@@ -178,10 +178,10 @@ public class DDoSSimulation {
 		memoryTF.setText("2048");
 		packagesizeTF.setText("32");
 												
-		String[] choicesDirectU45 = { "13", "17", "20", "15", "33", "42" };
-		String[] choicesDirectA45 = { "60", "70", "80", "90", "130", "190" };
-		String[] choicesReflectedU45 = { "13", "17", "20", "15", "33", "42" };
-		String[] choicesReflectedA45 = { "60", "70", "80", "90", "130", "190" };
+		String[] choicesDirectU45 = { "18", "21", "27", "33", "39", "42" };
+		String[] choicesDirectA45 = { "56", "60", "80", "128", "140", "160" };
+		String[] choicesReflectedU45 = { "7", "14", "21", "28", "35", "42" };
+		String[] choicesReflectedA45 = { "49", "70", "84", "105", "133", "161" };
 		numSlavesChoice = new Choice();
 		
 		String[] choices = globalDDOSTypeDirect == true ?  globalGraphTypeU45 == true?  choicesDirectU45 :  choicesDirectA45 : 

@@ -11,6 +11,7 @@ public class Package {
 	private Edge edge;
 	private int size, type;
 	private float cordX = 0, cordY = 0;
+	private float fixedX = 0, fixedY = 0;
 	private int status = Package.INIT;
 	private long timeStartSending = 0, timeReceived = 0;
 	
@@ -63,4 +64,12 @@ public class Package {
 	public int getType() { return type; }
 	
 	public int getSize() { return size; }
+
+	public float getFixedX() {return fixedX;}
+
+	public void setFixedX(float fixedX) {this.fixedX = fixedX;}
+
+	public float getFixedY() {return fixedY;}
+
+	public void setFixedY(float fixedY) {this.fixedY = fixedY;}
 }
