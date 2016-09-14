@@ -509,6 +509,8 @@ public class ProcessingSimulation extends PApplet{
 		float x = pack.getX();
 		float y = pack.getY();
 		
+		float oldX = x, oldY = y;	// coords will be updated before they get to fixed settings, so we save original coords for fixed
+		
 		float fixedX = pack.getFixedX();
 		float fixedY = pack.getFixedY();
 		
@@ -549,16 +551,18 @@ public class ProcessingSimulation extends PApplet{
 		if (!DDoSSimulation.globalGraphTypeU45) {
 			blinkEdges(pack); 
 			fixedPackage= true;
+			
 			if (fixedX == 0 || fixedY == 0) {
 				Random rand = new Random();
-				int typeFrom = pack.getEdge().getNodeFrom().getComputer().getType();
 				
-				int high = typeFrom == Computer.MASTER ? 40: typeFrom == Computer.MASTER_SLAVE ? 70 : typeFrom == Computer.SLAVE ? 170 : 45;
-				int low = 12;
+				int low = 0;
+				int high = pack.getEdge().getNodeTo().getY() - pack.getEdge().getNodeFrom().getY();
+				 
 				float speed = rand.nextInt(high - low) + low;
-				if (minus) fixedX = x - speedX * speed; 
-				else fixedX = x + speedX * speed; 
-				fixedY = y+ speedY* speed;
+				
+				if (minus) fixedX = oldX - speed * speedX; 
+				else fixedX = oldX + speed * speedX; 
+				fixedY = oldY + speed;
 				pack.setFixedX(fixedX);
 				pack.setFixedY(fixedY);
 			}
@@ -946,7 +950,8 @@ public class ProcessingSimulation extends PApplet{
 				}
 			}
 		}
-		Node mostRightDownPrev = null;if (DDoSSimulation.globalNumSlaves % 10 != 0)
+		Node mostRightDownPrev = null;
+		if (DDoSSimulation.globalNumSlaves % 10 != 0)
 			mostRightDownPrev = network.getNodeByID(DDoSSimulation.globalNumSlaves - DDoSSimulation.globalNumSlaves % 10);
 
 		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
