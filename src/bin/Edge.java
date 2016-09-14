@@ -7,13 +7,11 @@ import javax.swing.JTextArea;
 public class Edge {
 	private Node nodeFrom, nodeTo;
 	private String returnIPaddress = "";
-	private Network network;
 	private Set<Package> packages;
 	
-	public Edge(Network network, Node nodeFrom, Node nodeTo) {
+	public Edge(Node nodeFrom, Node nodeTo) {
 		this.nodeFrom = nodeFrom;
 		this.nodeTo = nodeTo;
-		this.network = network;
 		packages = new HashSet<Package>();
 	}
 	
