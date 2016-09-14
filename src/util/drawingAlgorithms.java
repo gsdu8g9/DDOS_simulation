@@ -26,7 +26,7 @@ public class drawingAlgorithms {
 		Node nodeSlave = (Node)nodesLine.removeFirst();
 		masterSlave.addSlave(nodeSlave);
 		nodeSlave.setColor(new Color(masterSlave.getColor().getRed(), masterSlave.getColor().getGreen(), masterSlave.getColor().getBlue()));
-		Edge edge1 = new Edge(network, masterSlave, nodeSlave);
+		Edge edge1 = new Edge(masterSlave, nodeSlave);
 		network.addEdge(edge1);
 		masterSlave.addNeighbor(nodeSlave);
 		nodeSlave.addNeighbor(masterSlave);
@@ -196,13 +196,13 @@ public class drawingAlgorithms {
 			nodeSlave.setComputer(newSlave);
 			
 			if (drawEdgesToSlaves) {
-				Edge edge1 = new Edge(network, masterNode, nodeSlave);
+				Edge edge1 = new Edge(masterNode, nodeSlave);
 				network.addEdge(edge1);
 				masterNode.addNeighbor(nodeSlave);
 				nodeSlave.addNeighbor(masterNode);
 			}
 				
-			Edge edge2 = new Edge(network, nodeSlave, targetNode);
+			Edge edge2 = new Edge(nodeSlave, targetNode);
 			network.addEdge(edge2);				
 			nodeSlave.addNeighbor(targetNode);
 			targetNode.addNeighbor(nodeSlave);
@@ -236,7 +236,7 @@ public class drawingAlgorithms {
 				connectMasterAndNodesFromLists(i, masterSlave, toFill--);
 				
 				//draw edges from ATTACKER -> MASTERSLAVEs
-				Edge edge1 = new Edge(network, network.getMasterNode(), masterSlave);
+				Edge edge1 = new Edge(network.getMasterNode(), masterSlave);
 				network.addEdge(edge1);
 				masterSlave.addNeighbor(network.getMasterNode());
 				network.getMasterNode().addNeighbor(masterSlave);

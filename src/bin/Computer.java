@@ -11,7 +11,6 @@ public class Computer {
 	private String ipAddress;
 	private String domain;
 	private int type, TTL;
-	private int[] memBuffer;
 	private int maxSize = 0, currSize = 0;
 	private long lastWave = 0;
 	private int numberOfPackagesReceived = 0;

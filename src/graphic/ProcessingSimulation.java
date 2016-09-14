@@ -25,7 +25,6 @@ public class ProcessingSimulation extends PApplet{
 
 	private long lastMSWave = 0, lastSRWave = 0, lastToTargetWave, lastVirusWave;
 	private Network network;
-	private Node routerNode = null;
 	private DDoSSimulation GUIcontrol;
 	private int stage = ProcessingSimulation.STAGE_INIT_NETWORK;
 	private int prevRandomX = 0, prevRandomY = 0;
@@ -800,7 +799,7 @@ public class ProcessingSimulation extends PApplet{
 	}
 
 	private void makeNeighbours(Node from, Node to) {
-		Edge edge = new Edge(network, from, to);
+		Edge edge = new Edge(from, to);
 		network.addEdge(edge);
 		from.addNeighbor(to);
 		to.addNeighbor(from);

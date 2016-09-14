@@ -38,14 +38,14 @@ public class DDoSSimulation {
 				 descriptionFont = new Font("Cambria", Font.ITALIC, 15),	
 				 terminalFont = new Font("Lucida Sans Typewriter", Font.PLAIN, 12);
 	
-	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, ipMainPanel, computerDetailsPanel, userHelpPanel;
+	private JPanel configurePanel, terminalPanel, detailsPanel, historyPanel, startingPanel, computerDetailsPanel, userHelpPanel;
 	private JLabel id_detail, ipAddress_detail, ttl_detail, type_detail, memory_detail;
 	private JTextField ttlTF, memoryTF, packagesizeTF;
 	private Choice numSlavesChoice;
 	private JTextArea terminal, packages_received_detail;
 	private JButton startDDoS;
 	
-	private int packageType = 1, lastInputTerminal = 1;
+	private int lastInputTerminal = 1;
 	private boolean ddosStarted = false;
 	
 	private ProcessingSimulation procGraphic = null;
