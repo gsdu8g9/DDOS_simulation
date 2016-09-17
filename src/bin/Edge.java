@@ -38,8 +38,32 @@ public class Edge {
 		if (pack.getType() == Package.EMAIL_VIRUS)
 			terminal.append("\n>Sending virus email from " + nodeFrom.getComputer().getIpAddress() + 
 							" to " + nodeTo.getComputer().getIpAddress());
-		else if (pack.getType() == Package.TCP_PACKAGE)
-			terminal.append("\n>Sending CYN package from " + nodeFrom.getComputer().getIpAddress() + 
+		else if (pack.getType() == Package.TCP_PACKAGE) 	// here is always SYN, ACK is outside
+			terminal.append("\n>Sending SYN package from " + nodeFrom.getComputer().getIpAddress() + 
 					" to " + nodeTo.getComputer().getIpAddress());
+		else if (pack.getType() == Package.ICMP_PACKAGE) {	// for reflectors
+			ICMPpacket icmp = (ICMPpacket)pack.getPacket();
+			
+			if (icmp.getType() == ICMPpacket.ECHO_REPLY)	
+				terminal.append("\n>Sending ECHO REPLY from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+			else if (icmp.getType() == ICMPpacket.ECHO_REQUEST)	
+				terminal.append("\n>Sending ECHO REQUEST from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+		}
+		else if (pack.getType() == Package.COMMAND) {
+			CommandPacket comm = (CommandPacket) pack.getPacket();
+			
+			if (comm.getType() == CommandPacket.GEN_ECHO_REQ) 
+				terminal.append("\n>Sending command to generate ECHO REQUEST from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+			if (comm.getType() == CommandPacket.GEN_SYN)
+				terminal.append("\n>Sending command to generate SYN from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+			if (comm.getType() == CommandPacket.INFECT)
+				terminal.append("\n>Sending INFECTING command from " + nodeFrom.getComputer().getIpAddress() + 
+						" to " + nodeTo.getComputer().getIpAddress());
+		}
 	} 
+		
 }

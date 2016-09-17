@@ -31,7 +31,6 @@ public class Node {
 		cordY = y;
 	}
 	
-	
 	public void setInfected(boolean inf) { infected = inf; }
 	
 	public boolean getInfected() { return infected; }
@@ -72,8 +71,6 @@ public class Node {
 			packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
 			pack = new Package(e, Package.ICMP_PACKAGE, packet);
 		}
-		
-		
 		long currSec = System.currentTimeMillis()/1000;
 		pack.setTimeStartSending(currSec);
 		pack.setStatus(Package.WAITING);
@@ -87,6 +84,7 @@ public class Node {
 		for(Edge e: allReflected) {
 			Packet packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
 			Package pack = new Package(e, Package.ICMP_PACKAGE, packet);
+			
 			long currSec = System.currentTimeMillis()/1000;
 			pack.setTimeStartSending(currSec);
 			pack.setStatus(Package.WAITING);
@@ -114,16 +112,14 @@ public class Node {
 	}
 	
 	public OutsidePackage processPing(OutsidePackage ping) {
-		// input in received - AKO ODABERES DA SE PAMTE SVI PAKETI - s tim da ovde mora da ide novi red, zbog tipa paketa
-		// if not - just process and return ack to user
-		
 		OutsidePackage retAck = null;
 		if (this.getComputer().isMemoryFull() == false) {
-			// odraditi neki momenat da sto je target optereceniji sa memorijom, da to sporije odgovara na ping usera
-			// tako generalno funckionise, kapiram da se moze srediti standardno sa nekim onim vremenima
-			
 			Packet packet = new ICMPpacket(network.getUserNode().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
 			retAck = new OutsidePackage(this, network.getUserNode().getX(), network.getUserNode().cordY, OutsidePackage.TARGET_PING, packet);
+			
+			ping.writeSending(network.getProcSim().getTerminal());
+			network.getProcSim().getGUIControl().updateLastInputTerminal();
+			
 			long currSec = System.currentTimeMillis()/1000;
 			retAck.setTimeCreated(currSec);
 		}
@@ -155,6 +151,7 @@ public class Node {
 			else if (computer.getType() == Computer.TARGET) {
 				Node retAckNode = network.findIPAddress(pack.getEdge().getReturnIPAddress());
 				computer.increaseMemory(DDoSSimulation.globalPackageSizeConf);
+				
 				return retAckNode;
 			}
 		}

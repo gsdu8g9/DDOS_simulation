@@ -136,25 +136,6 @@ public class Network {
 			}
 		}
 	}
-
-	/*public void sendFromAllSlaves(int packageType) {
-		int inc = 1;
-		for (Node n: allNodes) {
-			if (n.getComputer().getType() == Computer.SLAVE) {
-				Edge e = null;
-				if (DDoSSimulation.globalPackageTypeTCP == true)
-					e = getEdge(n, targetNode);
-				else 
-					e = getEdge(n, routerNode);
-				Package pack = new Package(e, DDoSSimulation.globalPackageSizeConf, packageType);
-				// for faster simulation -> instead of seconds use milliseconds !
-				long currSec = System.currentTimeMillis()/1000;
-				pack.setTimeStartSending(currSec + inc++);
-				procSim.addPackageToQueue(pack);
-				pack.setStatus(Package.WAITING);
-			}
-		}
-	} */
 	
 	public void sendFromAllMasters() {
 		int inc = 1;

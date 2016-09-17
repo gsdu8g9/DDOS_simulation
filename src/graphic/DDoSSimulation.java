@@ -3,12 +3,15 @@ package graphic;
 import java.awt.BorderLayout;
 import java.awt.Choice;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 import javax.swing.*;
@@ -31,7 +34,7 @@ public class DDoSSimulation {
 					  globalInMemTimeConf = 10, 		
 			          globalMemoryConf = 2048, 		
 			          globalPackageSizeConf = 32;
-	public static int globalGenPackagePerSec = 2;	// from masters - other we adjust according to this
+	public static int globalGenPackagePerSec = 1;	// from masters - other we adjust according to this
 					 
 	private JFrame window, popUpStart;
 	private Font labelFont = new Font("Cambria", Font.BOLD, 15),
@@ -178,7 +181,7 @@ public class DDoSSimulation {
 		memoryTF.setText("2048");
 		packagesizeTF.setText("32");
 												
-		String[] choicesDirectU45 = { "18", "21", "27", "33", "39", "42" };
+		String[] choicesDirectU45 = { "15", "24", "30", "33", "39", "42" };
 		String[] choicesDirectA45 = { "56", "60", "80", "128", "140", "160" };
 		String[] choicesReflectedU45 = { "7", "14", "21", "28", "35", "42" };
 		String[] choicesReflectedA45 = { "49", "70", "84", "105", "133", "161" };
@@ -271,9 +274,10 @@ public class DDoSSimulation {
 		//history panel --------------------------------------------------------------------------------
 		
 		historyPanel = new JPanel();
+		historyPanel.setPreferredSize(new Dimension(640, WINDOW_WIDTH));
 		historyPanel.setBorder(BorderFactory.createTitledBorder("Packages history"));
 		
-		packages_received_detail = new JTextArea(12,65);
+		packages_received_detail = new JTextArea(100,65);
 		packages_received_detail.setBackground(Color.BLACK);
 		packages_received_detail.setForeground(Color.RED);
 		packages_received_detail.setFont(terminalFont);
@@ -281,7 +285,7 @@ public class DDoSSimulation {
 		
 		historyPanel.add(sp_packReceived);
 		
-		computerDetailsPanel.add(historyPanel, BorderLayout.CENTER);
+		computerDetailsPanel.add(historyPanel);
 		historyPanel.setVisible(false); 	// -> will be visible when mouse click on component
 		
 		// terminal tab --------------------------------------------------------------------------------
@@ -302,18 +306,21 @@ public class DDoSSimulation {
 		        	String command = terminal.getText();
 		        	command = command.substring(lastInputTerminal);
 		        	
-		        	if (command.equals("start infecting")) { //---------------------------------------------------------
+		        	if (command.equals("infect masters")) { //---------------------------------------------------------
 		        		if (procGraphic == null) {
 		        			terminal.append("\n>Configure network first... \n>");
 		        			updateLastInputTerminal();
-		        		} else 
+		        		} else {
 		        			procGraphic.infectSlaves();
+		    				startInfectingMasters.setEnabled(false);
+		    				pausePlay.setEnabled(true);
+		        		}
 		        	} 
 		        	else if (command.equals("start ddos")) { //----------------------------------------------------------
 		        		if (procGraphic.getStage() == ProcessingSimulation.STAGE_ALL_INFECTED)
 		        			procGraphic.startDDos();
 		        		else {
-		        			terminal.append("\n>Infect slaves first... \n>");
+		        			terminal.append("\n>Infect masters first... \n>");
 		        			updateLastInputTerminal();
 		        		}
 		        	} 
@@ -370,6 +377,8 @@ public class DDoSSimulation {
 				procGraphic.infectSlaves();
 				startInfectingMasters.setEnabled(false);
 				pausePlay.setEnabled(true);
+				terminal.append("Infecting masters.....");
+    			updateLastInputTerminal();
 			}
 		});
 		
@@ -380,6 +389,8 @@ public class DDoSSimulation {
 				startDDoS.setEnabled(false);
 				ddosStarted = true;
 				pausePlay.setEnabled(true);
+				terminal.append("Starting DDoS.....");
+    			updateLastInputTerminal();
 			}
 		});
 		
@@ -399,6 +410,9 @@ public class DDoSSimulation {
 		ping.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				procGraphic.pingFromUser();
+				terminal.append("Ping command.....\n");
+				terminal.append(">Sending ECHO REQUEST from USER to TARGET");
+    			updateLastInputTerminal();
 			}
 		});
 		
@@ -430,7 +444,7 @@ public class DDoSSimulation {
 		    JSlider source = (JSlider)e.getSource();
 		    if (!source.getValueIsAdjusting()) {
 		        int fps = (int)source.getValue();
-		        if (fps == 0) { ProcessingSimulation.speedUp = 3; globalSpeedUpBar = 3; }
+		        if (fps == 0) { ProcessingSimulation.speedUp = 1; globalSpeedUpBar = 1; }
 		        else if (fps == 1) { ProcessingSimulation.speedUp = 7; globalSpeedUpBar = 7; }
 		        else if (fps == 2) { ProcessingSimulation.speedUp = 10; globalSpeedUpBar = 10; }
 		        else if (fps == 3) { ProcessingSimulation.speedUp = 15; globalSpeedUpBar = 15; }
@@ -475,7 +489,6 @@ public class DDoSSimulation {
 		return cspeedBar;
 	}
 	
-	
 	private void configureNetworkByDefault() {
 		procGraphic.makeNetworkDefault();
 		runSimulation();
@@ -488,20 +501,57 @@ public class DDoSSimulation {
 		ipAddress_detail.setText(": " + comp.getIpAddress());
 		type_detail.setText(": " + comp.getTypeString());
 		ttl_detail.setText(": " + comp.getTTL());
-		memory_detail.setText(": " + comp.getMemBuffSizeCurrent() + " / " + comp.getMemBuffSize());
+		memory_detail.setText(": " + comp.getMemBuffSize());
 		
-		packages_received_detail.setText("RECEIVED PACKAGES\n" +"total number - "+ comp.getNumberOfPackagesReceived()+ "\n");
-		packages_received_detail.append("still in memory:\n\n");
+		packages_received_detail.setText("RECEIVED PACKAGES\n" +"- Total number: "+ comp.getNumberOfPackagesReceived()+ "\n\n");
+		packages_received_detail.append("- Still in memory:\n\n");
 				
 		int numPackRec = 1;
 		List<Package> received = comp.getReceivedPackages();
 		for (Package pack: received) {
-			packages_received_detail.append("___PACKAGE "+numPackRec+"___\n");
-			packages_received_detail.append("sender IP: "+pack.getEdge().getNodeFrom().getComputer().getIpAddress()+"\n");
-			packages_received_detail.append("size: "+pack.getSize()+"\n");
-			packages_received_detail.append("time sent: "+pack.getTimeStartSending()+"\n");
-			packages_received_detail.append("time received: "+pack.getReceivedTime()+"\n");
-			packages_received_detail.append("________________\n");
+			packages_received_detail.append("-------------PACKAGE "+numPackRec+"-------------\n");
+			packages_received_detail.append("Sender IP: "+pack.getEdge().getNodeFrom().getComputer().getIpAddress()+"\n");
+			packages_received_detail.append("Size: "+pack.getSize()+"\n");
+			
+			Date timeSentDate = new Date(pack.getTimeStartSending());
+			DateFormat formatter = new SimpleDateFormat("HH:mm:ss:SSS");
+			String timeSent = formatter.format(timeSentDate);
+			
+			Date timeReceivedDate = new Date(pack.getReceivedTime());
+			String timeReceived = formatter.format(timeReceivedDate);
+			
+			String packType = "";
+			if (pack.getType() == Package.COMMAND) {
+				CommandPacket comm = (CommandPacket)pack.getPacket();
+				if (comm.getType() == CommandPacket.GEN_ECHO_REQ)
+					packType = "Command - Generate ECHO REQUEST";
+				else if (comm.getType() == CommandPacket.GEN_SYN)
+					packType = "Command - Generate SYN";
+				else if (comm.getType() == CommandPacket.INFECT)
+					packType = "Commnad - Infect slave - email with virus";
+			} 
+			else if (pack.getType() == Package.EMAIL_VIRUS) {
+				packType = "Email with virus";
+			}
+			else if (pack.getType() == Package.ICMP_PACKAGE) {
+				ICMPpacket icmp = (ICMPpacket)pack.getPacket();
+				if (icmp.getType() == ICMPpacket.ECHO_REPLY)
+					packType = "ICMP packet - ECHO REPLY";
+				else if (icmp.getType() == ICMPpacket.ECHO_REQUEST)
+					packType = "ICMP packet - ECHO REQUEST";
+			}
+			else if (pack.getType() == Package.TCP_PACKAGE) {
+				TCPpacket tcp = (TCPpacket)pack.getPacket();
+				if (tcp.getType() == TCPpacket.SYN)
+					packType = "TCP packet - SYN";
+				else if (tcp.getType() == TCPpacket.ACK)
+					packType = "TCP packet - ACK";
+			}
+			
+			packages_received_detail.append("Time sent: " + timeSent + "\n");
+			packages_received_detail.append("Time received: " + timeReceived + "\n");
+			packages_received_detail.append("Package type: " + packType + "\n");
+			packages_received_detail.append("------------------------------------\n");
 			numPackRec++;
 		}
 

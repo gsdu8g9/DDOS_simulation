@@ -4,6 +4,8 @@ public class CommandPacket extends Packet{
 	
 	public static final int INFECT = 1, GEN_ECHO_REQ = 2, GEN_SYN = 3;
 	
+	public static final String spoofedIp = "98.138.253.109";
+	
 	private String source = "";				
 	private String destination = "";		
 	private int type;
@@ -24,6 +26,9 @@ public class CommandPacket extends Packet{
 			s += "Generate SYN packets command";
 		
 		s += "\n From: "+ source +"\n To: "+ destination +"\n";
+
+		if (getType() == GEN_SYN)
+			s += "Spoofed ip: 98.138.253.109 \n";
 		return s;		
 	}
 

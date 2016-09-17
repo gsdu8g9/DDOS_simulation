@@ -53,6 +53,8 @@ public class ProcessingSimulation extends PApplet{
 		background(255);
 		drawNetworkBegining();
 	}
+	
+	public DDoSSimulation getGUIControl() { return GUIcontrol; }
 
 	public void infectSlaves() { 
 		stage = ProcessingSimulation.STAGE_INFECTING_VIRUS;
@@ -218,15 +220,15 @@ public class ProcessingSimulation extends PApplet{
 		pendingPings.clear();
 
 		if (stage != ProcessingSimulation.STAGE_INIT_NETWORK) {
-			lastMSWave = refreshPackageQueue(MSPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastMSWave, 1000);
+			lastMSWave = refreshPackageQueue(MSPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastMSWave, 500);
 			if (!DDoSSimulation.globalDDOSTypeDirect) {
 				Collections.shuffle(SRPackageQueue);
-				lastSRWave = refreshPackageQueue(SRPackageQueue, DDoSSimulation.globalGenPackagePerSec + 2, lastSRWave, 500);
+				lastSRWave = refreshPackageQueue(SRPackageQueue, DDoSSimulation.globalGenPackagePerSec + 1, lastSRWave, 500);
 			}
 			if (travellingPackages.size() < 15)
 				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, 1, lastToTargetWave, 500);
 			else
-				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, DDoSSimulation.globalGenPackagePerSec, lastToTargetWave, 500);
+				lastToTargetWave = refreshPackageQueue(toTargetPackageQueue, DDoSSimulation.globalGenPackagePerSec + 3, lastToTargetWave, 500);
 
 			//function for refreshing based on TTL
 			network.refreshComputerMemories();
@@ -272,6 +274,9 @@ public class ProcessingSimulation extends PApplet{
 			Packet packet = new ICMPpacket(network.getTargetNode().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
 			OutsidePackage newPack = new OutsidePackage(network.getUserNode(), network.getTargetNode().getX(), network.getTargetNode().getY(), OutsidePackage.USER_PING, packet);
 			newPack.setTimeCreated(currSec);
+			
+			network.getProcSim().getGUIControl().updateLastInputTerminal();
+			
 			pendingPings.add(newPack);
 		}
 	}
@@ -385,8 +390,10 @@ public class ProcessingSimulation extends PApplet{
 				travellingPackages.add(head);
 				Edge edge = head.getEdge();
 				edge.startSendingPackage(head);
+				
 				edge.writeSendingStart(head, getTerminal());
 				GUIcontrol.updateLastInputTerminal();
+				
 				packageQueue.remove(0);
 				if (packageQueue.size() > 0)
 					head = packageQueue.get(0);
@@ -581,16 +588,16 @@ public class ProcessingSimulation extends PApplet{
 		else if (pack.getType() == Package.COMMAND) {
 			CommandPacket command = (CommandPacket)pack.getPacket();
 			if (command.getType() == CommandPacket.GEN_SYN) {
-				img = loadImage("rect.png");
-				imgX = 40;
-				imgY = 60;
-				moveX = 30;
+				img = loadImage("comm_syn.png");
+				imgX = 30;
+				imgY = 30;
+				moveX = 15;
 			}
-			else if (command.getPacketType() == CommandPacket.GEN_ECHO_REQ) {
-				img = loadImage("rect.png");
-				imgX = 40;
-				imgY = 60;
-				moveX = 30;
+			else if (command.getType() == CommandPacket.GEN_ECHO_REQ) {
+				img = loadImage("comm_echo.png");
+				imgX = 30;
+				imgY = 30;
+				moveX = 15;
 			}
 			else
 				img = loadImage("email2.png");	//same as for infecting
@@ -647,8 +654,11 @@ public class ProcessingSimulation extends PApplet{
 		prevRandomX = (int)randomX;
 
 		Packet packet = new TCPpacket(network.getTargetNode().getComputer().getIpAddress(), "???.???.???.???", TCPpacket.ACK, DDoSSimulation.globalPackageSizeConf, pack.getPacket().getChecksum()+1);
-		OutsidePackage unknown = new OutsidePackage(pack.getEdge().getNodeTo(), randomX, randomY, packet);
+		OutsidePackage unknown = new OutsidePackage(pack.getEdge().getNodeTo(), randomX, randomY, OutsidePackage.ACKNOWLEDGE, packet);
 
+		unknown.writeSending(getTerminal());
+		GUIcontrol.updateLastInputTerminal();
+		
 		long currSec = System.currentTimeMillis();
 		unknown.setTimeCreated(currSec);
 
@@ -924,7 +934,22 @@ public class ProcessingSimulation extends PApplet{
 					GUIcontrol.makePacketWindow("No packet!");
 			}
 		}
-		//TODO: add checking for other queues
+		
+		//check for pings
+		
+		for (OutsidePackage p : travellingPings) {
+			float x = p.getCurrentX(); 
+			float y = p.getCurrentY();
+			
+			if ((X >= x - 10) && (X <= x + 10) &&
+					(Y >= y - 10) && (Y <= y + 10)) {
+				//clicked on pack -> show details
+				if (p.getPacket() != null && p.getPacket().getPacketType() == Packet.ICMP)
+					GUIcontrol.makePacketWindow(p.getPacket().toString());
+				else
+					GUIcontrol.makePacketWindow("No packet!");
+			}
+		}
 	}
 
 	public void makeInternalDirectUnder30() {

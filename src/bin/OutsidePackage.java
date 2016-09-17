@@ -1,5 +1,7 @@
 package bin;
 
+import javax.swing.JTextArea;
+
 public class OutsidePackage {
 	public static final int UNKNOWN = 0, ACKNOWLEDGE = 1, USER_PING = 2, TARGET_PING = 3;
 	
@@ -65,4 +67,13 @@ public class OutsidePackage {
 		return packet;
 	}
 
+	public void writeSending(JTextArea terminal) {
+		if (type == OutsidePackage.TARGET_PING)
+			terminal.append("\n>Sending ECHO REQUEST from USER to TARGET");
+		else if (type == OutsidePackage.USER_PING)	
+			terminal.append("\n>Sending ECHO REPLY from TARGET to USER");
+		else 
+			terminal.append("\n>Sending ACK package from TARGET to 98.138.253.109");
+	}
+	
 }

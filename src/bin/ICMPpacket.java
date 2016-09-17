@@ -22,12 +22,12 @@ public class ICMPpacket extends Packet{
 	public String toString() {
 		StringBuilder temp = new StringBuilder("");
 		
-		String line0 = "+---------------------------------------+\n";
+		String line0 = "______________________________\n";
 		String line1 = "| 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 |\n";
-		String line2 = "|    TYPE ( " + type + ")  |     CODE ( 0 )       |\n";
-		String line3 = "|         CHECKSUM  ( " + checksum + " )           |\n";
-		String line4 = "|    IDENTIFIER ( " + identifier + " )     |\n";
-		String line5 = "+---------------------------------------+\n";
+		String line2 = "|     TYPE ( " + type + ")    |          CODE ( 0 )             |\n";
+		String line3 = "|                CHECKSUM  ( " + checksum + " )            |\n";
+		String line4 = "|         IDENTIFIER ( " + identifier + " )       |\n";
+		String line5 = "|_____________________________|\n";
 		
 		temp.append(line0).append(line1).append(line2).append(line3).append(line4).append(line5);
 	
