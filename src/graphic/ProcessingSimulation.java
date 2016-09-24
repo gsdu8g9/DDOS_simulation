@@ -271,10 +271,11 @@ public class ProcessingSimulation extends PApplet{
 		// insert some limit time between two ping clicks
 		if (stage != ProcessingSimulation.STAGE_PAUSE) {
 			long currSec = System.currentTimeMillis()/1000;
-			Packet packet = new ICMPpacket(network.getTargetNode().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
+			Packet packet = new ICMPpacket(ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
 			OutsidePackage newPack = new OutsidePackage(network.getUserNode(), network.getTargetNode().getX(), network.getTargetNode().getY(), OutsidePackage.USER_PING, packet);
 			newPack.setTimeCreated(currSec);
 			
+			getGUIControl().getTerminal().append("\n>Sending ECHO REQUEST from USER to TARGET");
 			network.getProcSim().getGUIControl().updateLastInputTerminal();
 			
 			pendingPings.add(newPack);
@@ -944,7 +945,27 @@ public class ProcessingSimulation extends PApplet{
 			if ((X >= x - 10) && (X <= x + 10) &&
 					(Y >= y - 10) && (Y <= y + 10)) {
 				//clicked on pack -> show details
-				if (p.getPacket() != null && p.getPacket().getPacketType() == Packet.ICMP)
+				if (p.getPacket() != null) {
+					ICMPpacket icmpPack = (ICMPpacket)p.getPacket();
+					if (icmpPack.getType() == ICMPpacket.ECHO_REQUEST)
+						GUIcontrol.makePacketWindow(icmpPack.toString(network.getUserNode().getComputer().getIpAddress(), network.getTargetNode().getComputer().getIpAddress()));
+					else
+						GUIcontrol.makePacketWindow(icmpPack.toString(network.getTargetNode().getComputer().getIpAddress(), network.getUserNode().getComputer().getIpAddress()));
+				}
+				else
+					GUIcontrol.makePacketWindow("No packet!");
+			}
+		}
+		
+		//check for ack
+		for (OutsidePackage p : ackPackages) {
+			float x = p.getXTo();
+			float y = p.getYTo();
+			
+			if ((X >= x - 10) && (X <= x + 10) &&
+					(Y >= y - 10) && (Y <= y + 10)) {
+				//clicked on pack -> show details
+				if (p.getPacket() != null)
 					GUIcontrol.makePacketWindow(p.getPacket().toString());
 				else
 					GUIcontrol.makePacketWindow("No packet!");

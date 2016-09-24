@@ -68,7 +68,7 @@ public class Node {
 			pack = new Package(e, Package.TCP_PACKAGE, packet);
 		} else {
 			e = network.getEdge(this, network.getRouterNode());
-			packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
+			packet = new ICMPpacket(ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
 			pack = new Package(e, Package.ICMP_PACKAGE, packet);
 		}
 		long currSec = System.currentTimeMillis()/1000;
@@ -82,7 +82,7 @@ public class Node {
 		Set<Edge> allReflected = network.getAllReflectorEdges(this);
 		Set<Package> retSet = new HashSet<Package>();
 		for(Edge e: allReflected) {
-			Packet packet = new ICMPpacket(e.getNodeTo().getComputer().getIpAddress(), ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
+			Packet packet = new ICMPpacket(ICMPpacket.ECHO_REQUEST, DDoSSimulation.globalPackageSizeConf);
 			Package pack = new Package(e, Package.ICMP_PACKAGE, packet);
 			
 			long currSec = System.currentTimeMillis()/1000;
@@ -114,7 +114,7 @@ public class Node {
 	public OutsidePackage processPing(OutsidePackage ping) {
 		OutsidePackage retAck = null;
 		if (this.getComputer().isMemoryFull() == false) {
-			Packet packet = new ICMPpacket(network.getUserNode().getComputer().getIpAddress(), ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
+			Packet packet = new ICMPpacket(ICMPpacket.ECHO_REPLY, DDoSSimulation.globalPackageSizeConf);
 			retAck = new OutsidePackage(this, network.getUserNode().getX(), network.getUserNode().cordY, OutsidePackage.TARGET_PING, packet);
 			
 			ping.writeSending(network.getProcSim().getTerminal());

@@ -181,7 +181,7 @@ public class DDoSSimulation {
 		memoryTF.setText("2048");
 		packagesizeTF.setText("32");
 												
-		String[] choicesDirectU45 = { "15", "24", "30", "33", "39", "42" };
+		String[] choicesDirectU45 = { "15", "24", "30", "33", "39", "45" };
 		String[] choicesDirectA45 = { "56", "60", "80", "128", "140", "160" };
 		String[] choicesReflectedU45 = { "7", "14", "21", "28", "35", "42" };
 		String[] choicesReflectedA45 = { "49", "70", "84", "105", "133", "161" };
@@ -323,7 +323,10 @@ public class DDoSSimulation {
 		        			terminal.append("\n>Infect masters first... \n>");
 		        			updateLastInputTerminal();
 		        		}
-		        	} 
+		        	}
+		        	else if (command.equals("ping target")) {	//-------------------------------------------------------
+		        		procGraphic.pingFromUser();
+		        	}
 		        }
 		    }
 
@@ -345,7 +348,6 @@ public class DDoSSimulation {
 		tabs.addTab("Configure", configurePanel);
 		tabs.addTab("Terminal", terminalPanel);
 		tabs.addTab("Computer details", computerDetailsPanel);
-		tabs.addTab("User help", userHelpPanel);
 		window.add(tabs);
 		
 		// 'Configure' button -> locks textfields (for new parameters new simulation must be started)
@@ -415,7 +417,6 @@ public class DDoSSimulation {
     			updateLastInputTerminal();
 			}
 		});
-		
 	}
 	
 	// bar for speed animation
