@@ -51,6 +51,8 @@ public class TCPpacket extends Packet{
 	public String toString() {
 		StringBuilder temp = new StringBuilder("");
 		
+		source = "98.138.253.109";	//spoffed ip address
+		
 		String line0 = "__________________________________\n"; 			temp.append(line0);
 		String line1 = "| BIT | 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 |\n"; 			temp.append(line1);
 		String line2 = "|------|---------------------------------------------------|\n"; 			temp.append(line2);

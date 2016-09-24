@@ -929,8 +929,15 @@ public class ProcessingSimulation extends PApplet{
 			if ((X >= x - 10) && (X <= x + 10) &&
 					(Y >= y - 10) && (Y <= y + 10)) {
 				//clicked on pack -> show details
-				if (p.getPacket() != null)
+				if (p.getPacket() != null) {
+				if (p.getType() == Package.ICMP_PACKAGE){
+					ICMPpacket icmpPack = (ICMPpacket)p.getPacket();
+					GUIcontrol.makePacketWindow(icmpPack.toString(p.getEdge().getNodeFrom().getComputer().getIpAddress(),
+																		   p.getEdge().getNodeTo().getComputer().getIpAddress()));
+				}
+				else
 					GUIcontrol.makePacketWindow(p.getPacket().toString());
+				}
 				else
 					GUIcontrol.makePacketWindow("No packet!");
 			}
