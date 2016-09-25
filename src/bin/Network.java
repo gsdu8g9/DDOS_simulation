@@ -48,7 +48,7 @@ public class Network {
 		}
 		else 
 		{
-			if (n.getComputer().getType() == Computer.MASTER)
+			if (n.getComputer().getType() == Computer.ATTACKER)
 				masterNode = n;
 			else if (n.getComputer().getType() == Computer.TARGET)
 				targetNode = n;
@@ -106,7 +106,7 @@ public class Network {
 	public void refreshComputerMemories() {
 		for (Node n: allNodes) {
 			int type = n.getComputer().getType();
-			if (type == Computer.SLAVE || type == Computer.REFLECTING || type == Computer.TARGET) {
+			if (type == Computer.SLAVE || type == Computer.REFLECTOR || type == Computer.TARGET) {
 				Package firstPack = n.getComputer().getFirstReceivedPackage();
 				if (firstPack != null && n.getComputer().getFirstReceivedPackage().getTimeInBuffer() >= DDoSSimulation.globalInMemTimeConf)
 					n.getComputer().refreshMemory();

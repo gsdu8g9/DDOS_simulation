@@ -39,7 +39,7 @@ public class Node {
 	
 	public int getID() { return id; }
 	
-	public void setID (int id) { if (computer.getType() == Computer.MASTER || computer.getType() == Computer.TARGET) this.id = id;}
+	public void setID (int id) { if (computer.getType() == Computer.ATTACKER || computer.getType() == Computer.TARGET) this.id = id;}
 	
 	public void setComputer(Computer comp) { computer = comp; }
 	
@@ -57,6 +57,16 @@ public class Node {
 	
 	public Color getColor () {return color;}
 	
+	public boolean hasSlave(Node slave) {
+		boolean hasSlave = false;
+		for (Node mySlave:mySlaves) {
+			if (mySlave.equals(slave))
+				hasSlave = true;
+			break;
+		}
+		return hasSlave;
+	}
+
 	public Package attackTarget(int packageType) {
 		Edge e = null;
 		Packet packet = null;
@@ -159,7 +169,7 @@ public class Node {
 	}
 
 	private Node processICMPpackage(Package pack) {
-		if (infected || this.getComputer().getType() == Computer.REFLECTING || this.getComputer().getType() == Computer.TARGET) {
+		if (infected || this.getComputer().getType() == Computer.REFLECTOR || this.getComputer().getType() == Computer.TARGET) {
 			if (computer.getType() == Computer.SLAVE) {
 				//slave sends to reflecting nodes
 				Set<Package> newPackages = attackReflector(Package.ICMP_PACKAGE);
@@ -171,7 +181,7 @@ public class Node {
 				computer.increaseMemory(DDoSSimulation.globalPackageSizeConf);
 				return retAckNode;
 			} 
-			else if (computer.getType() == Computer.REFLECTING) {
+			else if (computer.getType() == Computer.REFLECTOR) {
 				Package newPack = attackTarget(Package.ICMP_PACKAGE);
 				network.getProcSim().addPackageToQueue(newPack);
 			}

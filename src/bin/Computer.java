@@ -6,7 +6,7 @@ import graphic.DDoSSimulation;
 
 public class Computer {
 	
-	public static final int MASTER = 0, MASTER_SLAVE = 1, SLAVE = 2, REFLECTING =3, TARGET = 4, USER = 5;
+	public static final int ATTACKER = 0, MASTER_ZOMBIE = 1, SLAVE = 2, REFLECTOR =3, TARGET = 4, USER = 5;
 	
 	private String ipAddress;
 	private String domain;
@@ -34,8 +34,8 @@ public class Computer {
 	public String getDomain() {return domain; }
 	
 	public String getTypeString() {
-		if (type == MASTER) return "MASTER";
-		if (type == MASTER_SLAVE) return "MASTER SLAVE";
+		if (type == ATTACKER) return "ATTACKER";
+		if (type == MASTER_ZOMBIE) return "MASTER SLAVE";
 		if (type == SLAVE) return "SLAVE";
 		if (type == TARGET) return "TARGET";
 		if (type == USER) return "USER";

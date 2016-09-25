@@ -27,7 +27,10 @@ public class DDoSSimulation {
 	private static final int WINDOW_WIDTH = 500,	POPUP_WIDTH = 400,
 							 WINDOW_HEIGHT = 800,	POPUP_HEIGHT = 200;
 	
-	public static boolean globalResourceTypeInternal = false, globalDDOSTypeDirect = true, globalPackageTypeTCP = false, globalGraphTypeU45 = true;
+	public static boolean globalResourceTypeInternal = false,
+						  globalDDOSTypeDirect = true, 
+						  globalPackageTypeTCP = false, 
+						  globalGraphTypeU45 = true;
 	public static int globalNumSlaves =30, 
 					  globalNumMasterSlaves = 5;
 	public static int globalSpeedUpBar = 3,

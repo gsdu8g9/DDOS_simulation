@@ -12,8 +12,10 @@ public class ProcessingSimulation extends PApplet{
 
 	public static final int PIXEL_RANGE_NODE = 60, APPLET_WIDTH = 1200, APPLET_HEIGHT = 700, PIXEL_START_LEFT = 100, PIXEL_START_TOP = 50,
 			PIXEL_START_LEFT_U30 = 200, MAX_MASTERS_U30 = 5;
-	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, STAGE_ALL_INFECTED = 3, STAGE_ATTACKING = 4,
-			STAGE_GEN = 5, STAGE_FINISHED = 6, STAGE_PAUSE = 7;
+	public static final int STAGE_INFECTING_VIRUS = 1, STAGE_INIT_NETWORK = 2, 
+							STAGE_ALL_INFECTED = 3, STAGE_ATTACKING = 4,
+							STAGE_GEN = 5, STAGE_FINISHED = 6, 
+							STAGE_PAUSE = 7;
 	public static final int X_STEP_U30 = 200, Y_STEP_U30 = 70;
 	public static final int TIMER_ACK_PROCESSING = 1000;
 
@@ -149,7 +151,7 @@ public class ProcessingSimulation extends PApplet{
 		Set<Edge> allEdges = network.getAllEdges();
 		for(Edge e: allEdges) {
 
-			if (e.getNodeTo().getComputer().getType() == Computer.TARGET || e.getNodeTo().getComputer().getType() == Computer.MASTER_SLAVE) {
+			if (e.getNodeTo().getComputer().getType() == Computer.TARGET || e.getNodeTo().getComputer().getType() == Computer.MASTER_ZOMBIE) {
 				stroke(0);
 				strokeWeight(1);
 			}
@@ -178,23 +180,23 @@ public class ProcessingSimulation extends PApplet{
 		Set<Node> allNodes = network.getAllNodes();
 		for(Node n: allNodes) {
 			int ntype = n.getComputer().getType();
-			if ((ntype == Computer.SLAVE)||(ntype == Computer.MASTER_SLAVE)||(ntype == Computer.REFLECTING)) {
+			if ((ntype == Computer.SLAVE)||(ntype == Computer.MASTER_ZOMBIE)||(ntype == Computer.REFLECTOR)) {
 
 				if (n.getInfected() == true) {
 					stroke(0);
-					fill(ntype == Computer.MASTER_SLAVE? 100: 255,0 ,0);
-					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
+					fill(ntype == Computer.MASTER_ZOMBIE? 100: 255,0 ,0);
+					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_ZOMBIE? 13 : 10, ntype==Computer.MASTER_ZOMBIE? 13 : 10);
 					if (DDoSSimulation.globalNumSlaves<=45) image(imgInfected, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 				}
 				else {
 					stroke(0);
 					strokeWeight(1);
-					//fill(0, ntype == Computer.MASTER_SLAVE? 100: 255 ,0);
+					//fill(0, ntype == Computer.MASTER_ZOMBIE? 100: 255 ,0);
 					fill(n.getColor().getRed(), n.getColor().getGreen(), n.getColor().getBlue());
-					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_SLAVE? 13 : 10, ntype==Computer.MASTER_SLAVE? 13 : 10);
+					ellipse(n.getX(), n.getY(), ntype==Computer.MASTER_ZOMBIE? 13 : 10, ntype==Computer.MASTER_ZOMBIE? 13 : 10);
 
 					if (DDoSSimulation.globalNumSlaves<=45) 
-						if (ntype == Computer.MASTER_SLAVE)
+						if (ntype == Computer.MASTER_ZOMBIE)
 							image(imgMasterSlave, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
 						else
 							image(imgClear, n.getX()-15, n.getY()-25, PIXEL_RANGE_NODE, PIXEL_RANGE_NODE);
@@ -386,7 +388,7 @@ public class ProcessingSimulation extends PApplet{
 
 			int numReleasedPacks = 0;
 			while (head != null && (numReleasedPacks < numPacks)) {
-				boolean isMSqueue = head.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER_SLAVE;
+				boolean isMSqueue = head.getEdge().getNodeFrom().getComputer().getType() == Computer.MASTER_ZOMBIE;
 				head.setStatus(Package.TRAVELING);
 				travellingPackages.add(head);
 				Edge edge = head.getEdge();
@@ -695,8 +697,8 @@ public class ProcessingSimulation extends PApplet{
 		else {
 			int typeFrom = pack.getEdge().getNodeFrom().getComputer().getType();
 
-			if (typeFrom == Computer.MASTER_SLAVE)	MSPackageQueue.add(pack);
-			else if (typeFrom == Computer.REFLECTING) toTargetPackageQueue.add(pack);
+			if (typeFrom == Computer.MASTER_ZOMBIE)	MSPackageQueue.add(pack);
+			else if (typeFrom == Computer.REFLECTOR) toTargetPackageQueue.add(pack);
 			else {
 				if (DDoSSimulation.globalDDOSTypeDirect) toTargetPackageQueue.add(pack);
 				else SRPackageQueue.add(pack);
@@ -708,12 +710,14 @@ public class ProcessingSimulation extends PApplet{
 	public void makeNetworkDefault() { 
 		network = new Network(this);
 
-		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.MASTER, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
+		Computer masterComputer = new Computer("79.101.110.24", "Marko Markovic", Computer.ATTACKER,
+								DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		Node masterNode = new Node(network, masterComputer, APPLET_WIDTH/2, 50);
 		masterNode.setID(500);
 		network.addNode(masterNode);
 
-		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
+		Computer targetComputer = new Computer("69.171.230.68", "Nikola Nikolic", Computer.TARGET,
+								DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		Node targetNode = null;
 		if (DDoSSimulation.globalPackageTypeTCP == true)
 			targetNode = new Node(network, targetComputer, APPLET_WIDTH/2, APPLET_HEIGHT-50);
@@ -731,20 +735,20 @@ public class ProcessingSimulation extends PApplet{
 
 		if (DDoSSimulation.globalDDOSTypeDirect) {
 			if (DDoSSimulation.globalGraphTypeU45) { 	
-				makeInternalDirectUnder30();	
+				makeInternalDirectUnder45();	
 			} else { 									
-				makeInternalDirectAbove50();
+				makeInternalDirectAbove45();
 			}
 		} else { 
 			if (DDoSSimulation.globalGraphTypeU45) { 
-				makeInternalReflectedUnder30();
+				makeNetworkReflectedUnder45();
 			} else {
-				makeInternalReflectedAbove50();
+				makeNetworkReflectedAbove45();
 			}
 		}
 	}
 
-	public void makeInternalReflectedAbove50() {
+	public void makeNetworkReflectedAbove45() {
 		int Ystep = 40;
 		int Xstep = 100;
 
@@ -797,22 +801,38 @@ public class ProcessingSimulation extends PApplet{
 		Vector<Node> reflectors = network.getReflectorNodes();
 		Vector<Node> slaves = network.getSlaveNodes();
 
-		for(Node reflector: reflectors) {
-			for(int i =0; i<7; i++) {
-
-				Random rand = new Random();
-				int slaveIndex = rand.nextInt(slaves.size());
-				Node nodeSlave = slaves.get(slaveIndex);
-				makeNeighbours(nodeSlave, reflector);
-				nodeSlave.addSlave(reflector); //not sure if this should stay
-			}
-			makeNeighbours(reflector, network.getRouterNode());
+		if (reflectors.size() > 14) { // only connect with seven
+			for(Node reflector: reflectors) {
+				for(int i =0; i < 7; i++) {
+					boolean alreadyConnected = true;
+					Node nodeSlave = null;
+					while (alreadyConnected) {
+						Random rand = new Random();
+						int slaveIndex = rand.nextInt(slaves.size());
+						nodeSlave = slaves.get(slaveIndex);
+						if (!nodeSlave.hasSlave(reflector)) alreadyConnected = false;
+					}
+					
+					makeNeighbours(nodeSlave, reflector);
+					nodeSlave.addSlave(reflector); //not sure if this should stay
+				}
+				makeNeighbours(reflector, network.getRouterNode());
+			} 
+		}
+		else { // all to all
+			for(Node reflector: reflectors) {
+				for(Node nodeSlave : slaves) {
+					makeNeighbours(nodeSlave, reflector);
+					nodeSlave.addSlave(reflector); //not sure if this should stay
+				}
+				makeNeighbours(reflector, network.getRouterNode());
+			} 
 		}
 
 		network.createConnectionWithUser();
 	}
 
-	public void makeInternalDirectAbove50() {
+	public void makeInternalDirectAbove45() {
 		int Ystep = 40;
 		int Xstep = 100;
 		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/4;
@@ -867,7 +887,7 @@ public class ProcessingSimulation extends PApplet{
 		Random rand = new Random();
 		nodeMasterSlave.setColor(new Color(rand.nextInt(254),rand.nextInt(254), rand.nextInt(254)));
 
-		Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
+		Computer newMasterSlave = new Computer("216.58.214."+nodeMasterSlave.getID(),"slave"+nodeMasterSlave.getID(), Computer.MASTER_ZOMBIE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		nodeMasterSlave.setComputer(newMasterSlave);
 		network.getMasterNode().addSlave(nodeMasterSlave);
 
@@ -897,7 +917,7 @@ public class ProcessingSimulation extends PApplet{
 
 	private Node makeReflectorAndAddToNetwork(int leftStart, int X, int Y, int Yoffset) {
 		Node nodeReflector1 = new Node(network, leftStart+X, 3*PIXEL_START_TOP+Y+Yoffset);
-		Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTING,DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
+		Computer newReflector1 = new Computer("216.58.214."+nodeReflector1.getID(),"slave"+nodeReflector1.getID(), Computer.REFLECTOR,DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
 		nodeReflector1.setComputer(newReflector1);
 		network.addNode(nodeReflector1);
 		network.addReflectorNode(nodeReflector1);
@@ -980,7 +1000,7 @@ public class ProcessingSimulation extends PApplet{
 		}
 	}
 
-	public void makeInternalDirectUnder30() {
+	public void makeInternalDirectUnder45() {
 		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/3;
 		int toFill = masters % MAX_MASTERS_U30;
 		int linePixel = masters / MAX_MASTERS_U30 * Y_STEP_U30;
@@ -1017,7 +1037,7 @@ public class ProcessingSimulation extends PApplet{
 		network.createConnectionWithUser();
 	}
 
-	public void makeInternalReflectedUnder30() {
+	public void makeNetworkReflectedUnder45() {
 		int masters = DDoSSimulation.globalNumMasterSlaves = DDoSSimulation.globalNumSlaves/7;
 		int toFill = masters % MAX_MASTERS_U30;
 		int linePixel = masters / MAX_MASTERS_U30 * Y_STEP_U30;
@@ -1066,19 +1086,33 @@ public class ProcessingSimulation extends PApplet{
 
 		Vector<Node> reflectors = network.getReflectorNodes();
 		Vector<Node> slaves = network.getSlaveNodes();
-		
-		for(Node reflector: reflectors) {
-			for(int i = 0; i < slaves.size()/2; i++) {
+		if (slaves.size() >= 10){
+			for(Node reflector: reflectors) {
+				for(int i = 0; i < slaves.size()/2; i++) {
+					boolean alreadyConnected = true;
+					Node nodeSlave = null;
+					while (alreadyConnected) {
+						Random rand = new Random();
+						int slaveIndex = rand.nextInt(slaves.size());
+						nodeSlave = slaves.get(slaveIndex);
+						if (!nodeSlave.hasSlave(reflector)) alreadyConnected = false;
+					}
 
-				Random rand = new Random();
-				int slaveIndex = rand.nextInt(slaves.size());
-				Node nodeSlave = slaves.get(slaveIndex);
-				makeNeighbours(nodeSlave, reflector);
-				nodeSlave.addSlave(reflector); //not sure if this should stay
+					makeNeighbours(nodeSlave, reflector);
+					nodeSlave.addSlave(reflector); //not sure if this should stay
+				}
+				makeNeighbours(reflector, network.getRouterNode());
 			}
-			makeNeighbours(reflector, network.getRouterNode());
 		}
-		
+		else {
+			for(Node reflector: reflectors) {
+				for(Node nodeSlave : slaves) {
+					makeNeighbours(nodeSlave, reflector);
+					nodeSlave.addSlave(reflector); //not sure if this should stay
+				}
+				makeNeighbours(reflector, network.getRouterNode());
+			}
+		}
 		network.createConnectionWithUser();
 	}
 
