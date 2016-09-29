@@ -474,9 +474,10 @@ public class ProcessingSimulation extends PApplet{
 	private void drawPing_Helper(OutsidePackage pack) {
 		float x = pack.getCurrentX();
 
-		if (pack.getType() == OutsidePackage.USER_PING) x = x - speedUp;
-		else
-			if (pack.getType() == OutsidePackage.TARGET_PING) x = x + speedUp;
+		if (pack.getType() == OutsidePackage.USER_PING)
+			x = x - speedUp;
+		else if (pack.getType() == OutsidePackage.TARGET_PING) 
+			x = x + speedUp;
 
 		pack.setCurrentX(x);
 
@@ -851,26 +852,28 @@ public class ProcessingSimulation extends PApplet{
 
 			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X-35, Y, 250);
 			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X, Y, 250);
-			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35, Y, 250);
+			Node lastSlave = makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35, Y, 250);
+			if (mostRightDown != null) {
+				if (mostRightDown.getX() <= lastSlave.getX())
+					mostRightDown = lastSlave;
+				else if ((mostRightDown.getX() <= lastSlave.getX() + 30) && (mostRightDown.getY() < lastSlave.getY()))
+					mostRightDown = lastSlave;
+			}
+			else
+				mostRightDown = lastSlave;
 
 			if (i==(masters-1) && (DDoSSimulation.globalNumSlaves%4 > 0)) {
 				for (int j=0; j<DDoSSimulation.globalNumSlaves%4; j++) {
-					makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35+35*(j+1), Y, 250);
+					Node lastSlave2 = makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+35+35*(j+1), Y, 250);
+					if (mostRightDown.getX() <= lastSlave2.getX())
+						mostRightDown = lastSlave2;
+					else if ((mostRightDown.getX() <= lastSlave2.getX() + 30) && (mostRightDown.getY() < lastSlave2.getY()))
+						mostRightDown = lastSlave2;
 				}
 			}
 		}		
 
-		Node mostRightDownPrev = null;
-		if (DDoSSimulation.globalNumSlaves % 10 != 0)
-			mostRightDownPrev = network.getNodeByID(DDoSSimulation.globalNumSlaves - DDoSSimulation.globalNumSlaves % 10);
-
-		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
-
-		if (mostRightDownPrev != null) {
-			if (mostRightDown.getX() < mostRightDownPrev.getX())
-				mostRightDown = mostRightDownPrev;
-		}
-
+		
 		network.createConnectionWithUser();
 	}
 
@@ -899,7 +902,7 @@ public class ProcessingSimulation extends PApplet{
 		return nodeMasterSlave;
 	}
 
-	private void makeSlaveAndAddToNetwork(Node nodeMasterSlave, int leftStart, int x, int y, int yOffset) {
+	private Node makeSlaveAndAddToNetwork(Node nodeMasterSlave, int leftStart, int x, int y, int yOffset) {
 
 		Node nodeSlave = new Node(network, leftStart+x, 3*PIXEL_START_TOP+y+yOffset);
 		Computer newSlave = new Computer("216.58.214."+nodeSlave.getID(),"slave"+nodeSlave.getID(), Computer.SLAVE, DDoSSimulation.globalMemoryConf, DDoSSimulation.globalInMemTimeConf);
@@ -913,6 +916,7 @@ public class ProcessingSimulation extends PApplet{
 
 		if (DDoSSimulation.globalDDOSTypeDirect) 
 			makeNeighbours(nodeSlave,network.getTargetNode());
+		return nodeSlave;
 	}
 
 	private Node makeReflectorAndAddToNetwork(int leftStart, int X, int Y, int Yoffset) {
@@ -952,8 +956,10 @@ public class ProcessingSimulation extends PApplet{
 				if (p.getPacket() != null) {
 				if (p.getType() == Package.ICMP_PACKAGE){
 					ICMPpacket icmpPack = (ICMPpacket)p.getPacket();
-					GUIcontrol.makePacketWindow(icmpPack.toString(p.getEdge().getNodeFrom().getComputer().getIpAddress(),
-																		   p.getEdge().getNodeTo().getComputer().getIpAddress()));
+					String fromIp = p.getEdge().getNodeFrom().getComputer().getType() == Computer.SLAVE? 
+										network.getTargetNode().getComputer().getIpAddress() :
+											p.getEdge().getNodeFrom().getComputer().getIpAddress();
+					GUIcontrol.makePacketWindow(icmpPack.toString(fromIp, p.getEdge().getNodeTo().getComputer().getIpAddress()));
 				}
 				else
 					GUIcontrol.makePacketWindow(p.getPacket().toString());
@@ -1015,25 +1021,28 @@ public class ProcessingSimulation extends PApplet{
 			Node nodeMasterSlave = makeMasterSlaveAndAddToNetwork(leftStart, X, Y);
 
 			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X-50, Y, 250);
-			makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50, Y, 250);
+			Node lastSlave = makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50, Y, 250);
+			if (mostRightDown != null) {
+				if (mostRightDown.getX() <= lastSlave.getX())
+					mostRightDown = lastSlave;
+				else if ((mostRightDown.getX() <= lastSlave.getX() + 30) && (mostRightDown.getY() < lastSlave.getY()))
+					mostRightDown = lastSlave;
+			}
+			else
+				mostRightDown = lastSlave;
+
 
 			if (i == (masters-1) && (DDoSSimulation.globalNumSlaves%3 > 0)) {
 				for (int j=0; j<DDoSSimulation.globalNumSlaves%3; j++) {
-					makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50+100*(j+1), Y, 250);
+					Node lastSlave2 = makeSlaveAndAddToNetwork(nodeMasterSlave, leftStart, X+50+100*(j+1), Y, 250);
+					if (mostRightDown.getX() <= lastSlave2.getX())
+						mostRightDown = lastSlave2;
+					else if ((mostRightDown.getX() <= lastSlave2.getX() + 30) && (mostRightDown.getY() < lastSlave2.getY()))
+						mostRightDown = lastSlave2;
 				}
 			}
 		}
-		Node mostRightDownPrev = null;
-		if (DDoSSimulation.globalNumSlaves % 10 != 0)
-			mostRightDownPrev = network.getNodeByID(DDoSSimulation.globalNumSlaves - DDoSSimulation.globalNumSlaves % 10);
-
-		mostRightDown = network.getNodeByID(DDoSSimulation.globalNumSlaves);
-
-		if (mostRightDownPrev != null) {
-			if (mostRightDown.getX() < mostRightDownPrev.getX())
-				mostRightDown = mostRightDownPrev;
-		}
-
+		
 		network.createConnectionWithUser();
 	}
 

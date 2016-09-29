@@ -169,7 +169,10 @@ public class Node {
 	}
 
 	private Node processICMPpackage(Package pack) {
-		if (infected || this.getComputer().getType() == Computer.REFLECTOR || this.getComputer().getType() == Computer.TARGET) {
+		if (infected ||
+				this.getComputer().getType() == Computer.REFLECTOR ||
+				this.getComputer().getType() == Computer.TARGET) 
+		{
 			if (computer.getType() == Computer.SLAVE) {
 				//slave sends to reflecting nodes
 				Set<Package> newPackages = attackReflector(Package.ICMP_PACKAGE);

@@ -21,7 +21,7 @@ public class ICMPpacket extends Packet{
 		StringBuilder temp = new StringBuilder("");
 		
 		String line0 = "Source ip: " + ipFrom + "\n";
-		String line1 = "Destinatio ip: " + ipTo + "\n";
+		String line1 = "Destination ip: " + ipTo + "\n";
 		String line2 = "______________________________\n";
 		String line3 = "| 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 |\n";
 		String line4 = "|     TYPE ( " + type + ")    |          CODE ( 0 )             |\n";
